@@ -4,6 +4,8 @@ import java.util.concurrent.Executors;
 
 public class App {
   public static void main(String[] args) throws Exception {
+    var config = new Config();
+
     var repository = new Repository();
 
     var readerExecutor = Executors.newSingleThreadScheduledExecutor();
