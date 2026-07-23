@@ -6,6 +6,14 @@ import java.util.List;
 class Repository {
   private final List<FeedEntry> database = new ArrayList<>();
 
+  /// Get feeds. A very valuable comment, innit?
+  public List<Feed> getFeeds() {
+    return List.of(
+        new Feed("https://feed1.com/"),
+        new Feed("https://feed2.ee/"),
+        new Feed("https://feed3.fi/"));
+  }
+
   /// Save a feed entry. This operation is idempotent.
   public synchronized void saveEntry(FeedEntry entry) {
     database.add(entry);

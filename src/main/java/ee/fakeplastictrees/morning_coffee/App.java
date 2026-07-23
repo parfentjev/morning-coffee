@@ -1,6 +1,5 @@
 package ee.fakeplastictrees.morning_coffee;
 
-import java.util.List;
 import java.util.concurrent.Executors;
 
 public class App {
@@ -8,8 +7,7 @@ public class App {
     var repository = new Repository();
 
     var readerExecutor = Executors.newSingleThreadScheduledExecutor();
-    var feedList = List.of("feed1", "feed2", "feed3");
-    var reader = new Reader(readerExecutor, repository, feedList);
+    var reader = new Reader(readerExecutor, repository);
     reader.run();
 
     var requestExecutor = Executors.newVirtualThreadPerTaskExecutor();
