@@ -6,7 +6,7 @@ import java.util.List;
 class Repository {
   private final List<FeedEntry> database = new ArrayList<>();
 
-  /// Get feeds. A very valuable comment, innit?
+  /// Get feeds. A highly valuable comment, innit?
   public List<Feed> getFeeds() {
     return List.of(
         new Feed("https://feed1.com/"),
