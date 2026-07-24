@@ -1,4 +1,8 @@
-.PHONY: run
+.PHONY: run lint
 
 run:
-	mvn package -DskipTests && java -jar target/morning-coffee-1.0-SNAPSHOT.jar
+	mvn compile exec:java -Dexec.mainClass=ee.fakeplastictrees.morningcoffee.App
+
+lint:
+	mvn --batch-mode --no-transfer-progress -DskipTests verify
+

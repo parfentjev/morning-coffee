@@ -1,14 +1,17 @@
-package ee.fakeplastictrees.morning_coffee;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.concurrent.ExecutorService;
+package ee.fakeplastictrees.morningcoffee;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 class Server {
+  private final Logger logger = LogManager.getLogger();
+
   private final ExecutorService executor;
   private final Repository repository;
 
@@ -22,6 +25,8 @@ class Server {
     server.createContext("/", new Handler(repository));
     server.setExecutor(executor);
     server.start();
+
+    logger.info("Server is ready to handle requests: http://0.0.0.0:8080/");
   }
 
   public static class Handler implements HttpHandler {
@@ -35,11 +40,16 @@ class Server {
     public void handle(HttpExchange exchange) throws IOException {
       var builder = new StringBuilder();
       builder.append("<h1>Entries</h1><ul>");
-      repository.getEntries(10).forEach(entry -> builder.append("<li><a href=\"")
-          .append(entry.url())
-          .append("\" target=\"_blank\">")
-          .append(entry.title())
-          .append("</a></li>"));
+      repository
+          .getEntries(10)
+          .forEach(
+              entry ->
+                  builder
+                      .append("<li><a href=\"")
+                      .append(entry.link())
+                      .append("\" target=\"_blank\">")
+                      .append(entry.title())
+                      .append("</a></li>"));
       builder.append("</ul>");
 
       var body = builder.toString().getBytes();

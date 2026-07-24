@@ -1,21 +1,25 @@
-package ee.fakeplastictrees.morning_coffee;
+package ee.fakeplastictrees.morningcoffee;
 
+import ee.fakeplastictrees.morningcoffee.model.Feed;
+import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import java.util.ArrayList;
 import java.util.List;
 
-class Repository {
+public class Repository {
+  private final Config.Repository config;
   private final List<FeedEntry> database = new ArrayList<>();
+
+  Repository(Config.Repository config) {
+    this.config = config;
+  }
 
   /// Get feeds. A highly valuable comment, innit?
   public List<Feed> getFeeds() {
-    return List.of(
-        new Feed("https://feed1.com/"),
-        new Feed("https://feed2.ee/"),
-        new Feed("https://feed3.fi/"));
+    return List.of(new Feed("https://github.com/dani-garcia/vaultwarden/releases.atom"));
   }
 
   /// Save a feed entry. This operation is idempotent.
-  public synchronized void saveEntry(FeedEntry entry) {
+  public synchronized void saveFeedEntry(FeedEntry entry) {
     database.add(entry);
   }
 
