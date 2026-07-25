@@ -1,7 +1,5 @@
 package ee.fakeplastictrees.morningcoffee.webserver;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import java.io.IOException;
@@ -14,13 +12,13 @@ import org.apache.logging.log4j.Logger;
 public class WebServer {
   private final Logger logger = LogManager.getLogger();
 
+  private final Controller controller;
   private final ExecutorService requestExecutor;
-  private final Repository repository;
 
   private HttpServer server;
 
   public WebServer(Repository repository) {
-    this.repository = repository;
+    this.controller = new Controller(repository);
     this.requestExecutor = Executors.newVirtualThreadPerTaskExecutor();
   }
 
@@ -28,11 +26,13 @@ public class WebServer {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> stop()));
 
     server = HttpServer.create(new InetSocketAddress(8080), 0);
-    server.createContext("/", new Handler(repository));
+    server.createContext("/", controller.indexHandler());
+    // todo: add static files handler
+    // (or just put everything into html? ugly)
     server.setExecutor(requestExecutor);
     server.start();
 
-    logger.info("server is ready to handle requests: http://0.0.0.0:8080/");
+    logger.info("ready to handle requests");
   }
 
   private void stop() {
@@ -42,36 +42,5 @@ public class WebServer {
     }
 
     requestExecutor.shutdownNow();
-  }
-
-  private static class Handler implements HttpHandler {
-    private final Repository repository;
-
-    Handler(Repository repostiry) {
-      this.repository = repostiry;
-    }
-
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-      var builder = new StringBuilder();
-      builder.append("<h1>Entries</h1><ul>");
-      repository
-          .getEntries(10)
-          .forEach(
-              entry ->
-                  builder
-                      .append("<li><a href=\"")
-                      .append(entry.link())
-                      .append("\" target=\"_blank\">")
-                      .append(entry.title())
-                      .append("</a></li>"));
-      builder.append("</ul>");
-
-      var body = builder.toString().getBytes();
-      exchange.sendResponseHeaders(200, body.length);
-      try (var outputStream = exchange.getResponseBody()) {
-        outputStream.write(body);
-      }
-    }
   }
 }
