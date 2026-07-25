@@ -1,5 +1,6 @@
-package ee.fakeplastictrees.morningcoffee;
+package ee.fakeplastictrees.morningcoffee.repository;
 
+import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.model.Feed;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import java.util.ArrayList;
@@ -9,7 +10,7 @@ public class Repository {
   private final Config.Repository config;
   private final List<FeedEntry> database = new ArrayList<>();
 
-  Repository(Config.Repository config) {
+  public Repository(Config.Repository config) {
     this.config = config;
   }
 

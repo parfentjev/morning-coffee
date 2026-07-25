@@ -2,13 +2,12 @@ package ee.fakeplastictrees.morningcoffee;
 
 import java.util.function.Function;
 
-public class Config {
-  private final Repository repository;
-  private final Reader reader;
+public record Config(Repository repository, Reader reader) {
+  public Config() {
+    var repository = new Repository();
+    var reader = new Reader();
 
-  Config() {
-    this.repository = new Repository();
-    this.reader = new Reader();
+    this(repository, reader);
   }
 
   private static String getenv(String key) {
@@ -24,35 +23,19 @@ public class Config {
     return parser.apply(value);
   }
 
-  public Repository repository() {
-    return repository;
-  }
+  public record Repository(String postgresUrl) {
+    public Repository() {
+      var postgresUrl = getenv("REPOSITORY_POSTGRES_URL");
 
-  public Reader reader() {
-    return reader;
-  }
-
-  public static class Repository {
-    private final String postgresUrl;
-
-    Repository() {
-      this.postgresUrl = getenv("REPOSITORY_POSTGRES_URL");
-    }
-
-    public String getPostgresUrl() {
-      return postgresUrl;
+      this(postgresUrl);
     }
   }
 
-  public static class Reader {
-    private final Long pollIntervalSeconds;
+  public record Reader(Long pollIntervalSeconds) {
+    public Reader() {
+      var pollIntervalSeconds = getenv("READER_POLL_INTERVAL_SECONDS", Long::valueOf);
 
-    Reader() {
-      this.pollIntervalSeconds = getenv("READER_POLL_INTERVAL_SECONDS", Long::valueOf);
-    }
-
-    public Long getPollIntervalSeconds() {
-      return pollIntervalSeconds;
+      this(pollIntervalSeconds);
     }
   }
 }
