@@ -30,7 +30,6 @@ class FeedParser {
       var message = "illegal argument in feed body";
       throw new FeedParserException(message, e);
     } catch (FeedException e) {
-      // failed to parse
       var message = "failed to parse feed";
       throw new FeedParserException(message, e);
     }

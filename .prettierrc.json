@@ -1,0 +1,6 @@
+{
+  "maxLineLength": "120",
+  "indentStyle": "space",
+  "indentSize": "2",
+  "htmlWhitespaceSensitivity": "ignore"
+}

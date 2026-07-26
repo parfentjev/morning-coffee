@@ -15,6 +15,10 @@ class FeedEntryMapper {
       throw new IllegalArgumentException("link can't be empty");
     }
 
-    return new FeedEntry(title, link);
+    if (link.startsWith("http://") || link.startsWith("https://")) {
+      return new FeedEntry(title, link);
+    }
+
+    throw new IllegalArgumentException("link must start with http or https");
   }
 }

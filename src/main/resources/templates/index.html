@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Morning Coffee</title>
-</head>
-<body>
-  <h1>Latest feed entries</h1>
-  <ul>
-    % entries %
-  </ul>
-</body>
+  <head>
+    <title>Morning Coffee</title>
+  </head>
+  <body>
+    <header>
+      <h1>Latest feed entries</h1>
+    </header>
+    <main>
+      <ul>
+        {{entries}}
+      </ul>
+    </main>
+    <footer>
+      Powered by
+      <a href="https://codeberg.org/parfentjev/morning-coffee" target="_blank">
+        morning-coffee
+      </a>
+    </footer>
+  </body>
 </html>
