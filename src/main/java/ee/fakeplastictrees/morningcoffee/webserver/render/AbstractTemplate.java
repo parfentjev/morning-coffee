@@ -33,6 +33,7 @@ abstract class AbstractTemplate implements Template {
   }
 
   @Override
+  // todo: this method is rather long, I can probably add a few helper functions
   public final String renderToHtml(TemplateData... values) throws TemplateException {
     var keyValueMap = stream(values).collect(toMap(TemplateData::key, TemplateData::value));
 
