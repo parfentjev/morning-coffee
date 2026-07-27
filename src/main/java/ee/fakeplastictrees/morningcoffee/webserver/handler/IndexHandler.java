@@ -11,6 +11,7 @@ class IndexHandler extends AbstractHttpHandler {
   private final IndexTemplate indexTemplate;
   private final FeedEntryTemplate feedEntryTemplate;
 
+  // todo: make public
   private IndexHandler(
       Repository repository, IndexTemplate indexTemplate, FeedEntryTemplate feedEntryTemplate) {
     this.repository = repository;
@@ -18,6 +19,7 @@ class IndexHandler extends AbstractHttpHandler {
     this.feedEntryTemplate = feedEntryTemplate;
   }
 
+  // todo: initialize somewhere else
   static IndexHandler load(Repository repository) throws TemplateException {
     var indexTemplate = new IndexTemplate();
     var feedEntryTemplate = new FeedEntryTemplate();
@@ -28,7 +30,8 @@ class IndexHandler extends AbstractHttpHandler {
   @Override
   protected Response response() throws Exception {
     var entriesHtml = new StringBuilder();
-    for (var entry : repository.getEntries(10)) {
+    var entriesNumber = 10; // todo: read from env var
+    for (var entry : repository.getEntries(entriesNumber)) {
       var feedName = new TemplateData("feed.name", "Some Feed");
       var entryLink = new TemplateData("entry.link", entry.link());
       var entryTitle = new TemplateData("entry.title", entry.title());
