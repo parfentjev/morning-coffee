@@ -1,11 +1,4 @@
 <li>
-  <!-- todo:
-    perhaps use different placeholders for attributes and content?
-    {{content(key)}}
-    {{attribute(key)}}
-    that still leaves room for human error, but I'm not trying to dethrone thymeleaf;
-    should be enough for my projet
-   -->
-  <a href="{{entry.link}}" target="_blank">{{entry.title}}</a>
-  {{feed.name}}
+  <a href="{{attribute|entry.link}}" target="_blank">{{content|entry.title}}</a>
+  {{content|feed.name}}
 </li>

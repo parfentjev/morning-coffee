@@ -2,9 +2,14 @@ package ee.fakeplastictrees.morningcoffee.reader;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
+import java.time.Instant;
 
 class FeedEntryMapper {
   public static FeedEntry syndEntryToFeedEntry(SyndEntry input) throws IllegalArgumentException {
+    // The UI layer (webserver package) is supposed to validate stored data before rendering it,
+    // but filtering out blatantly invalid feed entries here does no harm because there is no need
+    // to store them in the database.
+
     var title = input.getTitle();
     if (title == null || title.isBlank()) {
       throw new IllegalArgumentException("title can't be empty");
@@ -15,10 +20,10 @@ class FeedEntryMapper {
       throw new IllegalArgumentException("link can't be empty");
     }
 
-    if (link.startsWith("http://") || link.startsWith("https://")) {
-      return new FeedEntry(title, link);
-    }
+    // todo: replace these values with real data once Repository is fully implemented
+    var publishedAt = Instant.now();
+    var externalId = "temp";
 
-    throw new IllegalArgumentException("link must start with http or https");
+    return new FeedEntry(publishedAt, externalId, title, link);
   }
 }

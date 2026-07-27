@@ -2,7 +2,10 @@ package ee.fakeplastictrees.morningcoffee.webserver;
 
 import com.sun.net.httpserver.HttpServer;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
+import ee.fakeplastictrees.morningcoffee.webserver.handler.HandlerManager;
+import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateException;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,27 +15,44 @@ import org.apache.logging.log4j.Logger;
 public class WebServer {
   private final Logger logger = LogManager.getLogger();
 
-  private final Controller controller;
+  private static final int PORT = 8080;
+
+  private final Repository repository;
   private final ExecutorService requestExecutor;
 
   private HttpServer server;
 
   public WebServer(Repository repository) {
-    this.controller = new Controller(repository);
+    this.repository = repository;
     this.requestExecutor = Executors.newVirtualThreadPerTaskExecutor();
   }
 
-  public void start() throws IOException {
+  public void start() throws WebServerException, TemplateException {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> stop()));
 
-    server = HttpServer.create(new InetSocketAddress(8080), 0);
-    server.createContext("/", controller.indexHandler());
-    // todo: add static files handler
-    // (or just put everything into html? ugly)
+    server = createHttpServer(PORT);
+    // this call can fail if something is wrong with the templates;
+    // perhaps I should initialize handlers first, register second
+    HandlerManager.registerHandlers(server, repository);
     server.setExecutor(requestExecutor);
     server.start();
 
     logger.info("ready to handle requests");
+  }
+
+  private HttpServer createHttpServer(int port) throws WebServerException {
+    try {
+      return HttpServer.create(new InetSocketAddress(port), 0);
+    } catch (IllegalArgumentException e) {
+      var message = "invalid port number: %d".formatted(port);
+      throw new WebServerException(message, e);
+    } catch (BindException e) {
+      var message = "failed to bind to port: %d".formatted(port);
+      throw new WebServerException(message, e);
+    } catch (IOException e) {
+      var message = "i/o error";
+      throw new WebServerException(message, e);
+    }
   }
 
   private void stop() {

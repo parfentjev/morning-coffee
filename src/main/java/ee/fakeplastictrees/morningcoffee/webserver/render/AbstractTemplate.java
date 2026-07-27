@@ -5,8 +5,13 @@ import static java.util.stream.Collectors.toMap;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.owasp.encoder.Encode;
 
 abstract class AbstractTemplate implements Template {
+  private final Logger logger = LogManager.getLogger();
+
   private static final String PLACEHOLDER_START = "{{";
   private static final String PLACEHOLDER_END = "}}";
 
@@ -28,12 +33,8 @@ abstract class AbstractTemplate implements Template {
   }
 
   @Override
-  public final String renderToHtml(TemplateValue... values) {
-    if (values.length == 0) {
-      return template;
-    }
-
-    var keyValueMap = stream(values).collect(toMap(TemplateValue::getKey, TemplateValue::getValue));
+  public final String renderToHtml(TemplateData... values) throws TemplateException {
+    var keyValueMap = stream(values).collect(toMap(TemplateData::key, TemplateData::value));
 
     var output = new StringBuilder();
     var cursor = 0;
@@ -49,32 +50,50 @@ abstract class AbstractTemplate implements Template {
       var keyStart = placeholderOpening + PLACEHOLDER_START.length();
       var placeholderEnding = template.indexOf(PLACEHOLDER_END, keyStart);
       if (indexOfNotFound(placeholderEnding)) {
-        // todo: add proper exception
         var message = "placeholder at %d isn't closed".formatted(placeholderOpening);
-        throw new RuntimeException(message);
+        throw new TemplateException(message);
       }
 
-      var key = template.substring(keyStart, placeholderEnding).trim();
+      var placeholderValue = template.substring(keyStart, placeholderEnding).trim();
+      var placeholderParts = placeholderValue.split("\\|");
+      if (placeholderParts.length != 2) {
+        var message =
+            "placeholder %s consists of %d parts, expected 2"
+                .formatted(placeholderValue, placeholderParts.length);
+        throw new TemplateException(message);
+      }
+
+      var modifier = placeholderParts[0];
+      var key = placeholderParts[1];
+
       var value = keyValueMap.get(key);
       if (value == null) {
-        // todo: probably not worth throwing an exception,
-        // but add some visible text for development purposes
-        value = "keyValueMap: key %s not found".formatted(key);
+        value = new String();
+        logger.warn("keyValueMap: expected key {} doesn't exist", key);
       }
 
-      output.append(value);
+      var encodedValue =
+          switch (modifier) {
+            case "attribute" -> Encode.forHtmlAttribute(value);
+            case "content" -> Encode.forHtmlContent(value);
+            case "trusted" -> value;
+            default ->
+                throw new TemplateException("unexpected template modifier: %s".formatted(modifier));
+          };
+
+      output.append(encodedValue);
       cursor = placeholderEnding + PLACEHOLDER_END.length();
     }
 
     return output.toString();
   }
 
-  /// A helper function that determines whether `String.indexOf(str, fromIndex)` found a matching
-  /// value or not. It isn't strictly necessary, but it makes the intention behind the `i == -1`
-  /// check clearer.
+  /// A helper method that determines whether `String.indexOf(str, fromIndex)` found a matching
+  /// value. It is not strictly necessary, but it makes the intention of the `i == -1` check
+  /// clearer.
   ///
-  /// @return `true` if a matching value was not found.
-  /// @return `false` if a matching value was found.
+  /// @param i value returned by `String.indexOf(str, fromIndex)`
+  /// @return `true` if a matching value was not found; `false` otherwise
   private boolean indexOfNotFound(int i) {
     return i == -1;
   }

@@ -3,11 +3,22 @@ package ee.fakeplastictrees.morningcoffee;
 import ee.fakeplastictrees.morningcoffee.reader.ScheduledFeedReader;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.WebServer;
-import java.io.IOException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class App {
-  // todo: remove IOException
-  public static void main(String[] args) throws IOException {
+  private static final Logger logger = LogManager.getLogger();
+
+  public static void main(String[] args) {
+    try {
+      new App().start();
+    } catch (Exception e) {
+      logger.error("unhandled exception", e);
+      System.exit(1);
+    }
+  }
+
+  private void start() throws Exception {
     var config = new Config();
     var repository = new Repository(config.repository());
 
