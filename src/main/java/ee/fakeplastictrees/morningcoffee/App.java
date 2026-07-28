@@ -25,7 +25,7 @@ public class App {
     var reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();
 
-    var server = new WebServer(repository);
+    var server = new WebServer(config.webServer(), repository);
     server.start();
   }
 }

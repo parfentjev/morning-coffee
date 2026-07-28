@@ -3,19 +3,25 @@ package ee.fakeplastictrees.morningcoffee.model;
 import static java.util.Objects.requireNonNull;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /// An entry published in an RSS or Atom feed. All properties are guaranteed to be non-null.
 /// Values displayed publicly must be treated as untrusted and encoded for their output context.
 ///
+/// @param id unique identificator
 /// @param publishedAt publication date as reported by the publisher
 /// @param externalId unique identifier given by the publisher; if missing, `link` is used as the
 /// fallback value
+/// @param feedId unique identificator of a feed that this entry was published on
 /// @param title entry title
 /// @param link web link to this entry; guaranteed to start with either `http://` or `https://`
-public record FeedEntry(Instant publishedAt, String externalId, String title, String link) {
+public record FeedEntry(
+    UUID id, Instant publishedAt, String externalId, UUID feedId, String title, String link) {
   public FeedEntry {
+    requireNonNull(id);
     requireNonNull(publishedAt);
     requireNonNull(externalId);
+    requireNonNull(feedId);
     requireNonNull(title);
     requireNonNull(link);
 

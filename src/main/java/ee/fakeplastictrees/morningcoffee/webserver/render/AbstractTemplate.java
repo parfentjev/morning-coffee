@@ -34,7 +34,7 @@ abstract class AbstractTemplate implements Template {
 
   @Override
   // todo: this method is rather long, I can probably add a few helper functions
-  public final String renderToHtml(TemplateData... values) throws TemplateException {
+  public final String toHtml(TemplateData... values) throws TemplateException {
     var keyValueMap = stream(values).collect(toMap(TemplateData::key, TemplateData::value));
 
     var output = new StringBuilder();
@@ -55,6 +55,8 @@ abstract class AbstractTemplate implements Template {
         throw new TemplateException(message);
       }
 
+      // todo: perhaps this part can be extracted;
+      // parsePlaceholder() thar returns modifier and key - but there are no tuples in java?
       var placeholderValue = template.substring(keyStart, placeholderEnding).trim();
       var placeholderParts = placeholderValue.split("\\|");
       if (placeholderParts.length != 2) {
@@ -66,6 +68,7 @@ abstract class AbstractTemplate implements Template {
 
       var modifier = placeholderParts[0];
       var key = placeholderParts[1];
+      // todo: up to here
 
       var value = keyValueMap.get(key);
       if (value == null) {
@@ -73,16 +76,7 @@ abstract class AbstractTemplate implements Template {
         logger.warn("keyValueMap: expected key {} doesn't exist", key);
       }
 
-      var encodedValue =
-          switch (modifier) {
-            case "attribute" -> Encode.forHtmlAttribute(value);
-            case "content" -> Encode.forHtmlContent(value);
-            case "trusted" -> value;
-            default ->
-                throw new TemplateException("unexpected template modifier: %s".formatted(modifier));
-          };
-
-      output.append(encodedValue);
+      output.append(encodeValue(value, modifier));
       cursor = placeholderEnding + PLACEHOLDER_END.length();
     }
 
@@ -97,5 +91,15 @@ abstract class AbstractTemplate implements Template {
   /// @return `true` if a matching value was not found; `false` otherwise
   private boolean indexOfNotFound(int i) {
     return i == -1;
+  }
+
+  private String encodeValue(String value, String modifier) throws TemplateException {
+    return switch (modifier) {
+      case "attribute" -> Encode.forHtmlAttribute(value);
+      case "content" -> Encode.forHtmlContent(value);
+      case "trusted" -> value;
+      default ->
+          throw new TemplateException("unexpected template modifier: %s".formatted(modifier));
+    };
   }
 }

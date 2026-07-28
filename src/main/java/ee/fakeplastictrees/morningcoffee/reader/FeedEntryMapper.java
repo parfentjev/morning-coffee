@@ -3,6 +3,7 @@ package ee.fakeplastictrees.morningcoffee.reader;
 import com.rometools.rome.feed.synd.SyndEntry;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import java.time.Instant;
+import java.util.UUID;
 
 class FeedEntryMapper {
   public static FeedEntry syndEntryToFeedEntry(SyndEntry input) throws IllegalArgumentException {
@@ -21,9 +22,11 @@ class FeedEntryMapper {
     }
 
     // todo: replace these values with real data once Repository is fully implemented
+    var id = UUID.randomUUID();
     var publishedAt = Instant.now();
-    var externalId = "temp";
+    var externalId = UUID.randomUUID().toString();
+    var feedId = UUID.randomUUID();
 
-    return new FeedEntry(publishedAt, externalId, title, link);
+    return new FeedEntry(id, publishedAt, externalId, feedId, title, link);
   }
 }

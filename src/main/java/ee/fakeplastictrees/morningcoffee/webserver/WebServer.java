@@ -1,9 +1,11 @@
 package ee.fakeplastictrees.morningcoffee.webserver;
 
 import com.sun.net.httpserver.HttpServer;
+import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.handler.HandlerManager;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateException;
+import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
@@ -17,12 +19,14 @@ public class WebServer {
 
   private static final int PORT = 8080;
 
+  private final Config.WebServer config;
   private final Repository repository;
   private final ExecutorService requestExecutor;
 
   private HttpServer server;
 
-  public WebServer(Repository repository) {
+  public WebServer(Config.WebServer config, Repository repository) {
+    this.config = config;
     this.repository = repository;
     this.requestExecutor = Executors.newVirtualThreadPerTaskExecutor();
   }
@@ -30,10 +34,10 @@ public class WebServer {
   public void start() throws WebServerException, TemplateException {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> stop()));
 
+    var templateService = TemplateService.init();
+
     server = createHttpServer(PORT);
-    // this call can fail if something is wrong with the templates;
-    // perhaps I should initialize handlers first, register second
-    HandlerManager.registerHandlers(server, repository);
+    HandlerManager.registerHandlers(config, server, templateService, repository);
     server.setExecutor(requestExecutor);
     server.start();
 
