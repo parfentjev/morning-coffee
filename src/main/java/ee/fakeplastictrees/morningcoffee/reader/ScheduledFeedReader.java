@@ -2,15 +2,11 @@ package ee.fakeplastictrees.morningcoffee.reader;
 
 import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
-import java.util.ArrayList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.concurrent.*;
 
 public class ScheduledFeedReader {
   private final Logger logger = LogManager.getLogger();
@@ -31,7 +27,7 @@ public class ScheduledFeedReader {
   }
 
   public void start() {
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> stop()));
+    Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
 
     var interval = config.pollIntervalSeconds();
     var timeUnit = TimeUnit.SECONDS;

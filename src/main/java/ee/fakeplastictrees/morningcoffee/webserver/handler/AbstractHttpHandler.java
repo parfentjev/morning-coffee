@@ -2,11 +2,12 @@ package ee.fakeplastictrees.morningcoffee.webserver.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 abstract class AbstractHttpHandler implements HttpHandler {
   private final Logger logger = LogManager.getLogger();
@@ -56,7 +57,7 @@ abstract class AbstractHttpHandler implements HttpHandler {
   protected abstract Response response() throws Exception;
 
   private void write(HttpExchange exchange, int statusCode, byte[] body, String contentType) {
-    try {
+    try (exchange) {
       var length = body.length == 0 ? -1 : body.length;
       exchange.getResponseHeaders().set("Content-Type", contentType);
       exchange.sendResponseHeaders(statusCode, length);
@@ -70,29 +71,20 @@ abstract class AbstractHttpHandler implements HttpHandler {
       logger.debug("http exchange i/o error", e);
     } catch (Exception e) {
       logger.error("http exchange error", e);
-    } finally {
-      exchange.close();
     }
   }
 
   protected static class Response {
-    private String body;
-    private int statusCode;
+    private final String body;
+    private final int statusCode;
 
-    protected String getBody() {
-      return body;
-    }
-
-    protected void setBody(String body) {
+    private Response(String body, int statusCode) {
       this.body = body;
+      this.statusCode = statusCode;
     }
 
     protected int getStatusCode() {
       return statusCode;
-    }
-
-    protected void setStatusCode(int statusCode) {
-      this.statusCode = statusCode;
     }
 
     protected byte[] getBytes() {
@@ -100,11 +92,7 @@ abstract class AbstractHttpHandler implements HttpHandler {
     }
 
     protected static Response of(String body, int statusCode) {
-      var response = new Response();
-      response.setBody(body);
-      response.setStatusCode(statusCode);
-
-      return response;
+      return new Response(body, statusCode);
     }
   }
 }

@@ -20,7 +20,7 @@ public class App {
 
   private void start() throws Exception {
     var config = new Config();
-    var repository = new Repository(config.repository());
+    var repository = Repository.init(config.repository());
 
     var reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();

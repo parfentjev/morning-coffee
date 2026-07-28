@@ -10,7 +10,7 @@ public class HandlerManager {
   ///
   /// @param server server that processes user requests
   /// @param config web server configuration
-  /// @param template service that manages HTML templates
+  /// @param templateService service that manages HTML templates
   /// @param repository repository used by handlers to retrieve data necessary for page rendering
   public static void registerHandlers(
       Config.WebServer config,

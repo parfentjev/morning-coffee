@@ -11,11 +11,11 @@ public record Config(Repository repository, Reader reader, WebServer webServer) 
     this(repository, reader, webServer);
   }
 
-  private static String getenv(String key) {
-    return getenv(key, v -> v);
+  private static String getEnv(String key) {
+    return getEnv(key, v -> v);
   }
 
-  private static <T> T getenv(String key, Function<String, T> parser) {
+  private static <T> T getEnv(String key, Function<String, T> parser) {
     var value = System.getenv(key);
     if (value == null || value.isBlank()) {
       throw new RuntimeException("Env property is missing: " + key);
@@ -24,17 +24,19 @@ public record Config(Repository repository, Reader reader, WebServer webServer) 
     return parser.apply(value);
   }
 
-  public record Repository(String postgresUrl) {
+  public record Repository(String postgresUrl, String postgresUser, String postgresPassword) {
     public Repository() {
-      var postgresUrl = getenv("REPOSITORY_POSTGRES_URL");
+      var postgresUrl = getEnv("REPOSITORY_POSTGRES_URL");
+      var postgresUser = getEnv("REPOSITORY_POSTGRES_USER");
+      var postgresPassword = getEnv("REPOSITORY_POSTGRES_PASSWORD");
 
-      this(postgresUrl);
+      this(postgresUrl, postgresUser, postgresPassword);
     }
   }
 
   public record Reader(Long pollIntervalSeconds) {
     public Reader() {
-      var pollIntervalSeconds = getenv("READER_POLL_INTERVAL_SECONDS", Long::valueOf);
+      var pollIntervalSeconds = getEnv("READER_POLL_INTERVAL_SECONDS", Long::valueOf);
 
       this(pollIntervalSeconds);
     }
@@ -42,8 +44,8 @@ public record Config(Repository repository, Reader reader, WebServer webServer) 
 
   public record WebServer(int port, int entriesPerPage) {
     public WebServer() {
-      var port = getenv("WEB_SEVER_PORT", Integer::valueOf);
-      var entriesPerPage = getenv("WEB_SERVER_ENTRIES_PER_PAGE", Integer::valueOf);
+      var port = getEnv("WEB_SEVER_PORT", Integer::valueOf);
+      var entriesPerPage = getEnv("WEB_SERVER_ENTRIES_PER_PAGE", Integer::valueOf);
 
       this(port, entriesPerPage);
     }
