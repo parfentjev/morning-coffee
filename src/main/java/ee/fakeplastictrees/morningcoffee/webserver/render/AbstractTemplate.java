@@ -1,17 +1,14 @@
 package ee.fakeplastictrees.morningcoffee.webserver.render;
 
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toMap;
+import org.owasp.encoder.Encode;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.owasp.encoder.Encode;
+
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toMap;
 
 abstract class AbstractTemplate implements Template {
-  private final Logger logger = LogManager.getLogger();
-
   private static final String PLACEHOLDER_START = "{{";
   private static final String PLACEHOLDER_END = "}}";
 
@@ -33,7 +30,6 @@ abstract class AbstractTemplate implements Template {
   }
 
   @Override
-  // todo: this method is rather long, I can probably add a few helper functions
   public final String toHtml(TemplateData... values) throws TemplateException {
     var keyValueMap = stream(values).collect(toMap(TemplateData::key, TemplateData::value));
 
@@ -55,28 +51,11 @@ abstract class AbstractTemplate implements Template {
         throw new TemplateException(message);
       }
 
-      // todo: perhaps this part can be extracted;
-      // parsePlaceholder() thar returns modifier and key - but there are no tuples in java?
       var placeholderValue = template.substring(keyStart, placeholderEnding).trim();
-      var placeholderParts = placeholderValue.split("\\|");
-      if (placeholderParts.length != 2) {
-        var message =
-            "placeholder %s consists of %d parts, expected 2"
-                .formatted(placeholderValue, placeholderParts.length);
-        throw new TemplateException(message);
-      }
+      var placeholder = parsePlaceholderValue(placeholderValue);
+      var value = keyValueMap.getOrDefault(placeholder.key(), "");
 
-      var modifier = placeholderParts[0];
-      var key = placeholderParts[1];
-      // todo: up to here
-
-      var value = keyValueMap.get(key);
-      if (value == null) {
-        value = new String();
-        logger.warn("keyValueMap: expected key {} doesn't exist", key);
-      }
-
-      output.append(encodeValue(value, modifier));
+      output.append(encodeValue(value, placeholder.modifier()));
       cursor = placeholderEnding + PLACEHOLDER_END.length();
     }
 
@@ -93,6 +72,12 @@ abstract class AbstractTemplate implements Template {
     return i == -1;
   }
 
+  /// Encodes `value` for use in HTML templates.
+  ///
+  /// @param value untrusted raw data
+  /// @param modifier modifier from the template that indicates how this value must be encoded
+  /// @return encoded value
+  /// @throws TemplateException if an unexpected modifier is passed
   private String encodeValue(String value, String modifier) throws TemplateException {
     return switch (modifier) {
       case "attribute" -> Encode.forHtmlAttribute(value);
@@ -102,4 +87,27 @@ abstract class AbstractTemplate implements Template {
           throw new TemplateException("unexpected template modifier: %s".formatted(modifier));
     };
   }
+
+  /// Parses a raw `placeholderValue` from a template and returns its attributes.
+  ///
+  /// @param placeholderValue value between opening and closing tags, e.g. `modifier|variable.name`
+  /// @return [Placeholder] with extracted attributes
+  /// @throws TemplateException if `placeholderValue` doesn't consist of two segments divided by
+  // a single vertical bar
+  private Placeholder parsePlaceholderValue(String placeholderValue) throws TemplateException {
+    var placeholderParts = placeholderValue.split("\\|");
+    if (placeholderParts.length != 2) {
+      var message =
+          "placeholder %s consists of %d parts, expected 2"
+              .formatted(placeholderValue, placeholderParts.length);
+      throw new TemplateException(message);
+    }
+
+    var modifier = placeholderParts[0];
+    var key = placeholderParts[1];
+
+    return new Placeholder(modifier, key);
+  }
+
+  private record Placeholder(String modifier, String key) {}
 }
