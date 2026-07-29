@@ -1,7 +1,6 @@
 package ee.fakeplastictrees.morningcoffee.webserver.handler;
 
 import ee.fakeplastictrees.morningcoffee.Config;
-import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateData;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateException;
@@ -47,13 +46,14 @@ class IndexHandler extends AbstractHttpHandler {
     var output = new StringBuilder();
     var entriesNumber = config.entriesPerPage();
     for (var entry : repository.getEntries(entriesNumber)) {
-      buildEntry(output, entry);
+      // buildEntry(output, entry);
     }
 
     return output.toString();
   }
 
-  private void buildEntry(StringBuilder output, FeedEntry entry) throws TemplateException {
+  /*
+  private void buildEntry(StringBuilder output, FeedEntryDto entry) throws TemplateException {
     var template = templateService.getFeedEntryTemplate();
     var publishedAt = entry.publishedAt().atOffset(TIME_OFFSET).format(TIME_FORMATTER);
 
@@ -65,4 +65,5 @@ class IndexHandler extends AbstractHttpHandler {
     var entryHtml = template.toHtml(entryDate, feedName, entryLink, entryTitle);
     output.append(entryHtml);
   }
+  */
 }

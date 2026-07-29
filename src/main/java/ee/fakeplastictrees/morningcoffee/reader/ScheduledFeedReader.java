@@ -1,12 +1,12 @@
 package ee.fakeplastictrees.morningcoffee.reader;
 
 import ee.fakeplastictrees.morningcoffee.Config;
+import ee.fakeplastictrees.morningcoffee.model.Feed;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.concurrent.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ScheduledFeedReader {
   private final Logger logger = LogManager.getLogger();
@@ -59,7 +59,7 @@ public class ScheduledFeedReader {
     for (var feed : repository.getFeeds()) {
       tasks.add(
           () -> {
-            processFeed(feed.url());
+            processFeed(feed);
 
             return null;
           });
@@ -75,12 +75,16 @@ public class ScheduledFeedReader {
     }
   }
 
-  private void processFeed(String url) throws InterruptedException {
+  private void processFeed(Feed feed) throws InterruptedException {
     try {
-      var response = feedClient.fetchFeed(url);
+      var response = feedClient.fetchFeed(feed.url());
       var entries = feedParser.parseResponse(response);
 
-      entries.forEach(repository::saveFeedEntry);
+      entries.forEach(
+          entry -> {
+            entry.setFeedId(feed.id());
+            repository.saveFeedEntry(entry);
+          });
     } catch (FeedClientException e) {
       logger.warn("failed to fetch feed", e);
     } catch (FeedParserException e) {

@@ -1,4 +1,5 @@
 package ee.fakeplastictrees.morningcoffee.model;
 
-public record Feed(String name, String url) {
-}
+import java.util.UUID;
+
+public record Feed(UUID id, String url) {}

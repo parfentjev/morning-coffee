@@ -3,12 +3,13 @@ package ee.fakeplastictrees.morningcoffee.repository;
 import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.model.Feed;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.sql.SQLException;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 // todo: add a PostgreSQL client and use it to run queries
 public class Repository {
@@ -29,16 +30,19 @@ public class Repository {
   /// @return list of feeds that the service is expected to fetch
   public List<Feed> getFeeds() {
     var feeds = new ArrayList<Feed>();
-    var sql = "select name, url from feeds where enabled = true";
+    var sql =
+        """
+        select id, url from feeds where enabled = true
+        """;
     try (var result = client.query(sql)) {
       while (result.next()) {
-        var name = result.getString("name");
+        var id = UUID.fromString(result.getString("id"));
         var url = result.getString("url");
 
-        feeds.add(new Feed(name, url));
+        feeds.add(new Feed(id, url));
       }
     } catch (SQLException e) {
-      logger.error("postgres client error", e);
+      logger.error("failed to select feeds", e);
       return List.of();
     }
 
@@ -49,13 +53,29 @@ public class Repository {
   ///
   /// @param entry [FeedEntry] to save
   public synchronized void saveFeedEntry(FeedEntry entry) {
-    // database.add(entry);
+    var sql =
+        """
+        insert into entries(external_id, published_at, feed_id, title, link)
+        values(?, ?, ?, ?, ?)
+        on conflict(external_id, feed_id) do nothing
+        """;
+    try (var statement = client.statement(sql)) {
+      statement.setString(1, entry.getExtrnalId());
+      statement.setObject(2, entry.getPublishedAt().atOffset(ZoneOffset.UTC));
+      statement.setObject(3, entry.getFeedId());
+      statement.setString(4, entry.getTitle());
+      statement.setString(5, entry.getLink());
+      statement.execute();
+    } catch (SQLException e) {
+      logger.error("failed to insert feed entry", e);
+    }
   }
 
   /// Get the latest feed entries.
   ///
   /// @param n number of feed entries to select
   public synchronized List<FeedEntry> getEntries(int n) {
+    // todo: return actual entries from the db
     //    if (database.isEmpty()) {
     //      return List.of();
     //    }

@@ -1,13 +1,13 @@
 package ee.fakeplastictrees.morningcoffee.repository;
 
 import ee.fakeplastictrees.morningcoffee.Config;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 class PostgresClient {
   private final Logger logger = LogManager.getLogger();
@@ -31,8 +31,11 @@ class PostgresClient {
     }
   }
 
+  PreparedStatement statement(String sql) throws SQLException {
+    return connection.prepareStatement(sql);
+  }
+
   ResultSet query(String sql) throws SQLException {
-    //noinspection SqlSourceToSinkFlow
-    return connection.prepareStatement(sql).executeQuery();
+    return statement(sql).executeQuery();
   }
 }

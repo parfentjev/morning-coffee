@@ -8,11 +8,12 @@ CREATE TABLE public.feeds (
 
 CREATE TABLE public.entries (
 	id uuid DEFAULT uuidv7() NOT NULL,
-	published_at timestamptz NOT NULL,
 	external_id text NOT NULL,
+	published_at timestamptz NOT NULL,
 	feed_id uuid NOT NULL,
 	title text NOT NULL,
 	link text NOT NULL,
 	CONSTRAINT entries_pkey PRIMARY KEY (id),
-	CONSTRAINT entries_feed_id_fkey FOREIGN KEY (feed_id) REFERENCES public.feeds(id)
+	CONSTRAINT entries_feed_id_fkey FOREIGN KEY (feed_id) REFERENCES public.feeds(id),
+	CONSTRAINT entries_external_id_feed_id_key UNIQUE (external_id, feed_id)
 );
