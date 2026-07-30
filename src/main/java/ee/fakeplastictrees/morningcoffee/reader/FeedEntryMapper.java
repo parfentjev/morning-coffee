@@ -4,6 +4,7 @@ import static java.util.Optional.ofNullable;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 class FeedEntryMapper {
@@ -12,13 +13,6 @@ class FeedEntryMapper {
     // but filtering out blatantly invalid feed entries here does no harm because there is no need
     // to store them in the database.
     var entry = new FeedEntry();
-
-    var title = input.getTitle();
-    if (title == null || title.isBlank()) {
-      throw new IllegalArgumentException("title can't be empty");
-    } else {
-      entry.setTitle(title);
-    }
 
     var link = input.getLink();
     if (link == null || link.isBlank()) {
@@ -29,15 +23,29 @@ class FeedEntryMapper {
       entry.setLink(link);
     }
 
-    // Link is validated above, so it can be safely used as a fallback.
+    var title = input.getTitle();
+    if (title != null && !title.isBlank()) {
+      entry.setTitle(title);
+    } else {
+      entry.setTitle(link);
+    }
+
     var externalId = ofNullable(input.getUri()).orElseGet(() -> input.getLink());
     entry.setExternalId(externalId);
 
-    if (input.getPublishedDate() == null) {
-      throw new IllegalArgumentException("published date is null");
-    } else {
+    if (input.getPublishedDate() != null) {
       var publishedAt = input.getPublishedDate().toInstant().atOffset(ZoneOffset.UTC);
       entry.setPublishedAt(publishedAt);
+    } else if (input.getUpdatedDate() != null) {
+      var publishedAt = input.getUpdatedDate().toInstant().atOffset(ZoneOffset.UTC);
+      entry.setPublishedAt(publishedAt);
+    } else {
+      var publishedAt = OffsetDateTime.now();
+      entry.setPublishedAt(publishedAt);
+    }
+
+    if (entry.getPublishedAt().isAfter(OffsetDateTime.now())) {
+      entry.setPublishedAt(OffsetDateTime.now());
     }
 
     return entry;

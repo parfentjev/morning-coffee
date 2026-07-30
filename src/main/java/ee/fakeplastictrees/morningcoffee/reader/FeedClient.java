@@ -1,6 +1,7 @@
 package ee.fakeplastictrees.morningcoffee.reader;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -10,9 +11,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 class FeedClient {
-  private static final int HTTP_OK = 200;
-
   private final Logger logger = LogManager.getLogger();
+
+  private static final int MAX_RESPONSE_BODY_BYTES = 5 * 1024 * 1024;
+
   private final HttpClient httpClient = HttpClient.newHttpClient();
 
   public byte[] fetchFeed(String url) throws FeedClientException, InterruptedException {
@@ -21,10 +23,11 @@ class FeedClient {
       var request = HttpRequest.newBuilder().uri(uri).GET().build();
 
       logger.debug("fetching feed: {}", uri);
-      // todo: investigate response handler, should it be limited to `n` bytes?
-      // otherwise, the server might return the odyssey for all I know
-      var response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
-      if (response.statusCode() != HTTP_OK) {
+      var bodyHandler =
+          HttpResponse.BodyHandlers.limiting(
+              HttpResponse.BodyHandlers.ofByteArray(), MAX_RESPONSE_BODY_BYTES);
+      var response = httpClient.send(request, bodyHandler);
+      if (response.statusCode() != HttpURLConnection.HTTP_OK) {
         var statusCode = response.statusCode();
         var message = "%s returned unexpected status code: %d".formatted(uri, statusCode);
         throw new FeedClientException(message);

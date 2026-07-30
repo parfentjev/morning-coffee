@@ -9,12 +9,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 class FeedParser {
-  private final Logger logger = LogManager.getLogger();
-
   public List<FeedEntry> parseResponse(byte[] response) throws FeedParserException {
     try (var reader = new XmlReader(new ByteArrayInputStream(response))) {
       var feed = new SyndFeedInput().build(reader);
@@ -35,14 +31,10 @@ class FeedParser {
     }
   }
 
-  private List<FeedEntry> mapEntries(List<SyndEntry> syndEntries) {
+  private List<FeedEntry> mapEntries(List<SyndEntry> syndEntries) throws IllegalArgumentException {
     var output = new ArrayList<FeedEntry>();
     for (var syndEntry : syndEntries) {
-      try {
-        output.add(FeedEntryMapper.syndEntryToFeedEntry(syndEntry));
-      } catch (IllegalArgumentException e) {
-        logger.warn("failed to map synd entry to feed entry", e);
-      }
+      output.add(FeedEntryMapper.syndEntryToFeedEntry(syndEntry));
     }
 
     return output;

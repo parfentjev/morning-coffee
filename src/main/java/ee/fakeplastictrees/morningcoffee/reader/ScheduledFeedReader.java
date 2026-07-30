@@ -86,9 +86,9 @@ public class ScheduledFeedReader {
             repository.saveFeedEntry(entry);
           });
     } catch (FeedClientException e) {
-      logger.warn("failed to fetch feed", e);
+      logger.warn("failed to fetch feed: {}", feed.url(), e);
     } catch (FeedParserException e) {
-      logger.warn("failed to parse feed", e);
+      logger.warn("failed to parse feed: {}", feed.url(), e);
     }
   }
 }
