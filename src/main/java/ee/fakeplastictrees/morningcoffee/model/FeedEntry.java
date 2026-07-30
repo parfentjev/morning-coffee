@@ -1,12 +1,12 @@
 package ee.fakeplastictrees.morningcoffee.model;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class FeedEntry {
   private UUID id;
-  private String extrnalId;
-  private Instant publishedAt;
+  private String externalId;
+  private OffsetDateTime publishedAt;
   private UUID feedId;
   private String title;
   private String link;
@@ -19,19 +19,19 @@ public class FeedEntry {
     this.id = id;
   }
 
-  public String getExtrnalId() {
-    return extrnalId;
+  public String getExternalId() {
+    return externalId;
   }
 
-  public void setExtrnalId(String extrnalId) {
-    this.extrnalId = extrnalId;
+  public void setExternalId(String extrnalId) {
+    this.externalId = extrnalId;
   }
 
-  public Instant getPublishedAt() {
+  public OffsetDateTime getPublishedAt() {
     return publishedAt;
   }
 
-  public void setPublishedAt(Instant publishedAt) {
+  public void setPublishedAt(OffsetDateTime publishedAt) {
     this.publishedAt = publishedAt;
   }
 

@@ -4,7 +4,6 @@ import ee.fakeplastictrees.morningcoffee.Config;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,9 +32,5 @@ class PostgresClient {
 
   PreparedStatement statement(String sql) throws SQLException {
     return connection.prepareStatement(sql);
-  }
-
-  ResultSet query(String sql) throws SQLException {
-    return statement(sql).executeQuery();
   }
 }
