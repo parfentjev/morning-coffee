@@ -1,5 +1,5 @@
 [Unit]
-Description=Mornign Coffee RSS Client
+Description=Morning Coffee RSS Client
 After=network-online.target
 
 [Container]

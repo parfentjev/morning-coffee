@@ -1,12 +1,7 @@
-# JDT LS
-.classpath
-.project
-.settings
-.factorypath
-
 # Java and Maven
 .mvn
 target/
+.idea/
 
 # Et al.
 .env
