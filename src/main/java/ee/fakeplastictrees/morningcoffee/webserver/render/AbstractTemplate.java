@@ -1,12 +1,11 @@
 package ee.fakeplastictrees.morningcoffee.webserver.render;
 
-import org.owasp.encoder.Encode;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toMap;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toMap;
+import org.owasp.encoder.Encode;
 
 abstract class AbstractTemplate implements Template {
   private static final String PLACEHOLDER_START = "{{";
@@ -14,6 +13,7 @@ abstract class AbstractTemplate implements Template {
 
   private final String template;
 
+  // todo: constructor throws
   protected AbstractTemplate(String templateFile) throws TemplateException {
     var resource = "templates/%s".formatted(templateFile);
     try (var stream = AbstractTemplate.class.getClassLoader().getResourceAsStream(resource)) {

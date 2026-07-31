@@ -1,0 +1,17 @@
+[Unit]
+Description=Mornign Coffee RSS Client
+After=network-online.target
+
+[Container]
+Image=localhost/morning-coffee:latest
+PublishPort=127.0.0.1:8080:8080
+NoNewPrivileges=true
+EnvironmentFile=%h/morning-coffee.env
+
+[Service]
+Restart=always
+TimeoutStartSec=60
+
+[Install]
+WantedBy=default.target
+
