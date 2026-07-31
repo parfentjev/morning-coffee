@@ -1,7 +1,5 @@
 package ee.fakeplastictrees.morningcoffee.reader;
 
-import static java.util.Optional.ofNullable;
-
 import com.rometools.rome.feed.synd.SyndEntry;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import java.time.OffsetDateTime;
@@ -33,8 +31,12 @@ class FeedEntryMapper {
       entry.setTitle(link);
     }
 
-    var externalId = ofNullable(input.getUri()).orElseGet(input::getLink);
-    entry.setExternalId(externalId);
+    var externalId = input.getUri();
+    if (externalId != null && !externalId.isBlank()) {
+      entry.setExternalId(externalId);
+    } else {
+      entry.setExternalId(link);
+    }
 
     if (input.getPublishedDate() != null) {
       var publishedAt = input.getPublishedDate().toInstant().atOffset(OFFSET);

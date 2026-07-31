@@ -60,15 +60,15 @@ public record Config(Repository repository, Reader reader, WebServer webServer) 
 
   /// Configures HTTP serving.
   ///
-  /// @param port HTTP listen port
+  /// @param serverPort HTTP listen serverPort
   /// @param entriesPerPage maximum entries shown per page
-  public record WebServer(int port, int entriesPerPage) {
+  public record WebServer(int serverPort, int entriesPerPage) {
     /// Loads web server configuration from environment variables.
     public WebServer() {
-      var port = getEnv("WEB_SEVER_PORT", Integer::valueOf);
+      var serverPort = getEnv("WEB_SERVER_PORT", Integer::valueOf);
       var entriesPerPage = getEnv("WEB_SERVER_ENTRIES_PER_PAGE", Integer::valueOf);
 
-      this(port, entriesPerPage);
+      this(serverPort, entriesPerPage);
     }
   }
 }

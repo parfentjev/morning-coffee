@@ -43,7 +43,7 @@ public class WebServer {
 
     var templateService = TemplateService.init();
 
-    server = createHttpServer(config.port());
+    server = createHttpServer(config.serverPort());
     HandlerManager.registerHandlers(config, server, templateService, repository);
     server.setExecutor(requestExecutor);
     server.start();
@@ -55,10 +55,10 @@ public class WebServer {
     try {
       return HttpServer.create(new InetSocketAddress(port), 0);
     } catch (IllegalArgumentException e) {
-      var message = "invalid port number: %d".formatted(port);
+      var message = "invalid serverPort number: %d".formatted(port);
       throw new WebServerException(message, e);
     } catch (BindException e) {
-      var message = "failed to bind to port: %d".formatted(port);
+      var message = "failed to bind to serverPort: %d".formatted(port);
       throw new WebServerException(message, e);
     } catch (IOException e) {
       var message = "i/o error";
