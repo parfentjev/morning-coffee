@@ -3,28 +3,20 @@ package ee.fakeplastictrees.morningcoffee.model;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/// Represents a feed entry fetched for persistence.
 public class FeedEntry {
-  private UUID id;
   private String externalId;
   private OffsetDateTime publishedAt;
   private UUID feedId;
   private String title;
   private String link;
 
-  public UUID getId() {
-    return id;
-  }
-
-  public void setId(UUID id) {
-    this.id = id;
-  }
-
   public String getExternalId() {
     return externalId;
   }
 
-  public void setExternalId(String extrnalId) {
-    this.externalId = extrnalId;
+  public void setExternalId(String externalId) {
+    this.externalId = externalId;
   }
 
   public OffsetDateTime getPublishedAt() {

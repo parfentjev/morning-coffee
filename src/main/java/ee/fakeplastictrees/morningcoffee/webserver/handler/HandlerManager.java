@@ -5,6 +5,7 @@ import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 
+/// Registers application HTTP handlers.
 public class HandlerManager {
   /// Registers HTTP handlers with the given [HttpServer].
   ///

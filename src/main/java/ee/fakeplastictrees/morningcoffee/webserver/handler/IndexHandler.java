@@ -3,15 +3,14 @@ package ee.fakeplastictrees.morningcoffee.webserver.handler;
 import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntryDto;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
+import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateData;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateException;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.net.HttpURLConnection;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 class IndexHandler extends AbstractHttpHandler {
-  private static final ZoneOffset TIME_OFFSET = ZoneOffset.UTC;
   private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
   private final Config.WebServer config;
@@ -43,7 +42,7 @@ class IndexHandler extends AbstractHttpHandler {
     return "/";
   }
 
-  private String buildEntries() throws TemplateException {
+  private String buildEntries() throws RepositoryException, TemplateException {
     var output = new StringBuilder();
     var entriesNumber = config.entriesPerPage();
     for (var entry : repository.getEntries(entriesNumber)) {

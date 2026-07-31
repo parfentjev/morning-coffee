@@ -4,10 +4,16 @@ import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.model.Feed;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import java.util.ArrayList;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/// Polls configured feeds and persists new entries on a fixed schedule.
 public class ScheduledFeedReader {
   private final Logger logger = LogManager.getLogger();
 
@@ -19,6 +25,10 @@ public class ScheduledFeedReader {
   private final FeedClient feedClient = new FeedClient();
   private final FeedParser feedParser = new FeedParser();
 
+  /// Creates a scheduled feed reader.
+  ///
+  /// @param config feed reader configuration
+  /// @param repository feed repository
   public ScheduledFeedReader(Config.Reader config, Repository repository) {
     this.config = config;
     this.repository = repository;
@@ -26,6 +36,7 @@ public class ScheduledFeedReader {
     this.fetchFeedExecutor = Executors.newVirtualThreadPerTaskExecutor();
   }
 
+  /// Starts scheduled feed polling.
   public void start() {
     Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
 

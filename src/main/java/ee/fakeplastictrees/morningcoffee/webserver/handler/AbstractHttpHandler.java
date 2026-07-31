@@ -2,18 +2,16 @@ package ee.fakeplastictrees.morningcoffee.webserver.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 abstract class AbstractHttpHandler implements HttpHandler {
-  private final Logger logger = LogManager.getLogger();
-
   private static final String CONTENT_TYPE_TEXT_PLAIN = "text/plain; charset=utf-8";
   private static final String CONTENT_TYPE_TEXT_HTML = "text/html; charset=utf-8";
+  private final Logger logger = LogManager.getLogger();
 
   @Override
   public final void handle(HttpExchange exchange) {
@@ -50,8 +48,10 @@ abstract class AbstractHttpHandler implements HttpHandler {
     write(exchange, statusCode, body, contentType);
   }
 
+  @SuppressWarnings("SameReturnValue")
   protected abstract String requestMethod();
 
+  @SuppressWarnings("SameReturnValue")
   protected abstract String requestPath();
 
   protected abstract Response response() throws Exception;
@@ -83,16 +83,17 @@ abstract class AbstractHttpHandler implements HttpHandler {
       this.statusCode = statusCode;
     }
 
+    @SuppressWarnings("SameParameterValue")
+    protected static Response of(String body, int statusCode) {
+      return new Response(body, statusCode);
+    }
+
     protected int getStatusCode() {
       return statusCode;
     }
 
     protected byte[] getBytes() {
       return body.getBytes(StandardCharsets.UTF_8);
-    }
-
-    protected static Response of(String body, int statusCode) {
-      return new Response(body, statusCode);
     }
   }
 }

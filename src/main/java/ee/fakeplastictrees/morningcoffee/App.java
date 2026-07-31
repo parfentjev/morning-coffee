@@ -6,10 +6,12 @@ import ee.fakeplastictrees.morningcoffee.webserver.WebServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/// Starts the Morning Coffee application.
 public class App {
   private static final Logger logger = LogManager.getLogger();
 
-  public static void main(String[] args) {
+  /// Starts application services.
+  static void main() {
     try {
       new App().start();
     } catch (Exception e) {

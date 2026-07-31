@@ -31,9 +31,9 @@ class FeedParser {
     }
   }
 
-  private List<FeedEntry> mapEntries(List<SyndEntry> syndEntries) throws IllegalArgumentException {
+  private List<FeedEntry> mapEntries(List<SyndEntry> entries) throws IllegalArgumentException {
     var output = new ArrayList<FeedEntry>();
-    for (var syndEntry : syndEntries) {
+    for (var syndEntry : entries) {
       output.add(FeedEntryMapper.syndEntryToFeedEntry(syndEntry));
     }
 

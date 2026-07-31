@@ -20,6 +20,9 @@ public class Repository {
 
   private final PostgresClient client;
 
+  /// Creates a repository from database configuration.
+  ///
+  /// @param config database configuration
   public Repository(Config.Repository config) {
     this.client = new PostgresClient(config);
   }
@@ -61,7 +64,7 @@ public class Repository {
         on conflict(external_id, feed_id) do nothing
         """;
     try (var connection = client.connect();
-        var statement = connection.prepareStatement(sql); ) {
+        var statement = connection.prepareStatement(sql)) {
       statement.setString(1, entry.getExternalId());
       statement.setObject(2, entry.getPublishedAt());
       statement.setObject(3, entry.getFeedId());
@@ -76,16 +79,17 @@ public class Repository {
   /// Returns the latest feed entries in descending entry ID order.
   ///
   /// @param n maximum number of entries to return
-  /// @return up to {@code n} latest feed entries; may be empty if the query fails
-  public List<FeedEntryDto> getEntries(int n) {
+  /// @return up to `n` latest feed entries; may be empty if the query fails
+  public List<FeedEntryDto> getEntries(int n) throws RepositoryException {
     var entries = new ArrayList<FeedEntryDto>();
     var sql =
         """
         select
-        f.name as \"feed_name\",
-        e.title as \"entry_title\", e.link as \"entry_link\", e.published_at as \"entry_published_at\"
+        f.name as "feed_name",
+        e.title as "entry_title", e.link as "entry_link", e.published_at as "entry_published_at"
         from entries e
         join feeds f on f.id = e.feed_id
+        where f.enabled = true
         order by e.published_at desc limit ?;
         """;
     try (var connection = client.connect();
@@ -103,7 +107,7 @@ public class Repository {
         }
       }
     } catch (SQLException e) {
-      logger.error("failed to insert feed entry", e);
+      throw new RepositoryException(e);
     }
 
     return entries;

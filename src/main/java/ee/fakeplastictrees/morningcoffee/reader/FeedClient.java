@@ -11,10 +11,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 class FeedClient {
-  private final Logger logger = LogManager.getLogger();
-
   private static final int MAX_RESPONSE_BODY_BYTES = 5 * 1024 * 1024;
-
+  private final Logger logger = LogManager.getLogger();
   private final HttpClient httpClient = HttpClient.newHttpClient();
 
   public byte[] fetchFeed(String url) throws FeedClientException, InterruptedException {

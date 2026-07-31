@@ -2,7 +2,13 @@ package ee.fakeplastictrees.morningcoffee;
 
 import java.util.function.Function;
 
+/// Collects application configuration.
+///
+/// @param repository repository configuration
+/// @param reader feed reader configuration
+/// @param webServer web server configuration
 public record Config(Repository repository, Reader reader, WebServer webServer) {
+  /// Loads application configuration from environment variables.
   public Config() {
     var repository = new Repository();
     var reader = new Reader();
@@ -24,7 +30,13 @@ public record Config(Repository repository, Reader reader, WebServer webServer) 
     return parser.apply(value);
   }
 
+  /// Configures PostgreSQL access.
+  ///
+  /// @param postgresUrl PostgreSQL JDBC URL
+  /// @param postgresUser PostgreSQL user
+  /// @param postgresPassword PostgreSQL password
   public record Repository(String postgresUrl, String postgresUser, String postgresPassword) {
+    /// Loads repository configuration from environment variables.
     public Repository() {
       var postgresUrl = getEnv("REPOSITORY_POSTGRES_URL");
       var postgresUser = getEnv("REPOSITORY_POSTGRES_USER");
@@ -34,7 +46,11 @@ public record Config(Repository repository, Reader reader, WebServer webServer) 
     }
   }
 
+  /// Configures feed polling.
+  ///
+  /// @param pollIntervalSeconds delay between feed polls, in seconds
   public record Reader(Long pollIntervalSeconds) {
+    /// Loads reader configuration from environment variables.
     public Reader() {
       var pollIntervalSeconds = getEnv("READER_POLL_INTERVAL_SECONDS", Long::valueOf);
 
@@ -42,7 +58,12 @@ public record Config(Repository repository, Reader reader, WebServer webServer) 
     }
   }
 
+  /// Configures HTTP serving.
+  ///
+  /// @param port HTTP listen port
+  /// @param entriesPerPage maximum entries shown per page
   public record WebServer(int port, int entriesPerPage) {
+    /// Loads web server configuration from environment variables.
     public WebServer() {
       var port = getEnv("WEB_SEVER_PORT", Integer::valueOf);
       var entriesPerPage = getEnv("WEB_SERVER_ENTRIES_PER_PAGE", Integer::valueOf);

@@ -3,33 +3,18 @@ package ee.fakeplastictrees.morningcoffee.webserver.render;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toMap;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import org.owasp.encoder.Encode;
 
-abstract class AbstractTemplate implements Template {
+abstract class AbstractTemplate {
   private static final String PLACEHOLDER_START = "{{";
   private static final String PLACEHOLDER_END = "}}";
 
   private final String template;
 
-  // todo: constructor throws
-  protected AbstractTemplate(String templateFile) throws TemplateException {
-    var resource = "templates/%s".formatted(templateFile);
-    try (var stream = AbstractTemplate.class.getClassLoader().getResourceAsStream(resource)) {
-      if (stream == null) {
-        var message = "failed to load template resource: %s".formatted(resource);
-        throw new TemplateException(message);
-      }
-
-      this.template = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-    } catch (IOException e) {
-      var message = "failed to read template resource";
-      throw new TemplateException(message, e);
-    }
+  protected AbstractTemplate(String template) {
+    this.template = template;
   }
 
-  @Override
   public final String toHtml(TemplateData... values) throws TemplateException {
     var keyValueMap = stream(values).collect(toMap(TemplateData::key, TemplateData::value));
 

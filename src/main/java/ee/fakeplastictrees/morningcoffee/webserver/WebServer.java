@@ -6,15 +6,15 @@ import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.handler.HandlerManager;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateException;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+/// Serves feed entries over HTTP.
 public class WebServer {
   private final Logger logger = LogManager.getLogger();
 
@@ -24,12 +24,20 @@ public class WebServer {
 
   private HttpServer server;
 
+  /// Creates a web server.
+  ///
+  /// @param config web server configuration
+  /// @param repository feed repository
   public WebServer(Config.WebServer config, Repository repository) {
     this.config = config;
     this.repository = repository;
     this.requestExecutor = Executors.newVirtualThreadPerTaskExecutor();
   }
 
+  /// Starts accepting HTTP requests.
+  ///
+  /// @throws WebServerException if the HTTP server cannot be created
+  /// @throws TemplateException if application templates cannot be loaded
   public void start() throws WebServerException, TemplateException {
     Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
 
