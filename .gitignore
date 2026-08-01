@@ -1,7 +1,5 @@
 # Java and Maven
-.mvn
 target/
-.idea/
 
 # Et al.
 .env

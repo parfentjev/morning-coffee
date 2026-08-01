@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 /// Serves feed entries over HTTP.
 public class WebServer {
-  private final Logger logger = LogManager.getLogger();
+  private static final Logger logger = LogManager.getLogger();
 
   private final Config.WebServer config;
   private final Repository repository;

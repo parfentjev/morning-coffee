@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 /// Polls configured feeds and persists new entries on a fixed schedule.
 public class ScheduledFeedReader {
-  private final Logger logger = LogManager.getLogger();
+  private static final Logger logger = LogManager.getLogger();
 
   private final Config.Reader config;
   private final ScheduledExecutorService scheduledExecutor;
@@ -76,9 +76,14 @@ public class ScheduledFeedReader {
           });
     }
 
-    var futures = fetchFeedExecutor.invokeAll(tasks);
+    var futures = fetchFeedExecutor.invokeAll(tasks, 1, TimeUnit.MINUTES);
     for (var future : futures) {
       try {
+        if (future.isCancelled()) {
+          logger.info("fetch feed task timed out");
+          continue;
+        }
+
         future.get();
       } catch (ExecutionException e) {
         logger.error("unhandled fetch feed execution exception", e);

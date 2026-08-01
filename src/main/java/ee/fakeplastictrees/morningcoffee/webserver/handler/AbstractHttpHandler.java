@@ -9,9 +9,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 abstract class AbstractHttpHandler implements HttpHandler {
+  private static final Logger logger = LogManager.getLogger();
+
   private static final String CONTENT_TYPE_TEXT_PLAIN = "text/plain; charset=utf-8";
   private static final String CONTENT_TYPE_TEXT_HTML = "text/html; charset=utf-8";
-  private final Logger logger = LogManager.getLogger();
 
   @Override
   public final void handle(HttpExchange exchange) {

@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 ///
 /// Each operation opens and closes its own database connection and JDBC resources.
 public class Repository {
-  private final Logger logger = LogManager.getLogger();
+  private static final Logger logger = LogManager.getLogger();
 
   private final PostgresClient client;
 

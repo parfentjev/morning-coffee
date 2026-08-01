@@ -26,3 +26,10 @@ if that's what you want.
 ## User Interface
 
 ![A screenshot of a web page showing a list of fetched items. It's plain HTML with no CSS or JavaScript. Isn't that great? (Say yes 🔫)](user-interface.webp)
+
+## Technical stack
+
+- Java 25
+- Maven 3
+- PostgreSQL 18
+
