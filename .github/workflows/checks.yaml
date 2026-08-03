@@ -1,0 +1,20 @@
+name: checks
+
+on:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up java
+        uses: actions/setup-java@v5.7.0
+        with:
+          distribution: "temurin"
+          java-version: 25
+      - name: Run lint plugins
+        run: make lint
