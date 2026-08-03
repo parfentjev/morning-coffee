@@ -9,8 +9,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 class FeedParser {
+  private static final Logger logger = LogManager.getLogger();
+
   public List<FeedEntry> parseResponse(byte[] response) throws FeedParserException {
     try (var reader = new XmlReader(new ByteArrayInputStream(response))) {
       var feed = new SyndFeedInput().build(reader);
@@ -31,10 +35,16 @@ class FeedParser {
     }
   }
 
-  private List<FeedEntry> mapEntries(List<SyndEntry> entries) throws IllegalArgumentException {
+  private List<FeedEntry> mapEntries(List<SyndEntry> entries) {
     var output = new ArrayList<FeedEntry>();
     for (var syndEntry : entries) {
-      output.add(FeedEntryMapper.syndEntryToFeedEntry(syndEntry));
+      try {
+        var mappedEntry = FeedEntryMapper.syndEntryToFeedEntry(syndEntry);
+        output.add(mappedEntry);
+      } catch (IllegalArgumentException e) {
+        logger.info("failed to map feed entry, skipping", e);
+        continue;
+      }
     }
 
     return output;

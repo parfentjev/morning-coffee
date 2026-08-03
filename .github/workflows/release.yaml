@@ -1,0 +1,25 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_TAG: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up podman
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ${{ env.REGISTRY }} --username ${{ github.actor }} --password-stdin
+      - name: Build image
+        run: podman build -t ${{ env.IMAGE_TAG }} .
+      - name: Publish image
+        run: podman push ${{ env.IMAGE_TAG }}
