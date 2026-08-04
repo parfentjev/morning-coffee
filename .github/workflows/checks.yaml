@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  lint:
+  validate:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -18,3 +18,5 @@ jobs:
           java-version: 25
       - name: Run lint plugins
         run: make lint
+      - name: Run unit tests
+        run: make test

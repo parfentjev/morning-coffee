@@ -90,7 +90,7 @@ public class Repository {
         from entries e
         join feeds f on f.id = e.feed_id
         where f.enabled = true
-        order by e.published_at desc limit ?;
+        order by e.id desc limit ?;
         """;
     try (var connection = client.connect();
         var statement = connection.prepareStatement(sql)) {
