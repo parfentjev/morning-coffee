@@ -21,9 +21,8 @@ public class ScheduledFeedReader {
   private final ScheduledExecutorService scheduledExecutor;
   private final ExecutorService fetchFeedExecutor;
   private final Repository repository;
-
-  private final FeedClient feedClient = new FeedClient();
-  private final FeedParser feedParser = new FeedParser();
+  private final FeedClient feedClient;
+  private final FeedParser feedParser;
 
   /// Creates a scheduled feed reader.
   ///
@@ -32,8 +31,12 @@ public class ScheduledFeedReader {
   public ScheduledFeedReader(Config.Reader config, Repository repository) {
     this.config = config;
     this.repository = repository;
+
     this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
     this.fetchFeedExecutor = Executors.newVirtualThreadPerTaskExecutor();
+
+    this.feedClient = new FeedClient(config.requestThrottlingDelaySeconds());
+    this.feedParser = new FeedParser();
   }
 
   /// Starts scheduled feed polling.
@@ -76,14 +79,8 @@ public class ScheduledFeedReader {
           });
     }
 
-    var futures = fetchFeedExecutor.invokeAll(tasks, 2, TimeUnit.MINUTES);
-    for (var future : futures) {
+    for (var future : fetchFeedExecutor.invokeAll(tasks)) {
       try {
-        if (future.isCancelled()) {
-          logger.info("fetch feed task timed out");
-          continue;
-        }
-
         future.get();
       } catch (ExecutionException e) {
         logger.error("unhandled fetch feed execution exception", e);

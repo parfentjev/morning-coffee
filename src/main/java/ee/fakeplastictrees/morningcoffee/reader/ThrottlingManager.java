@@ -10,6 +10,9 @@ class ThrottlingManager<T> {
   private final Semaphore semaphore;
   private long nextRequestNanoTime;
 
+  /// Creates a new instance of ThrottlingManager.
+  ///
+  /// @param delay delay between requests executed by the manager
   ThrottlingManager(Duration delay) {
     this.delay = delay;
     this.semaphore = new Semaphore(1);

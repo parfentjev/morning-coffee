@@ -22,13 +22,16 @@ class FeedClient {
   private static final String USER_AGENT =
       "MorningCoffee/1.0 (+https://github.com/parfentjev/morning-coffee)";
   private static final Duration HTTP_CLIENT_TIMEOUT = Duration.ofSeconds(10);
-  private static final Duration REQUEST_THROTTLING_DURATION = Duration.ofSeconds(5);
 
+  private final HttpClient httpClient;
   private final ConcurrentHashMap<String, ThrottlingManager<HttpResponse<byte[]>>>
       throttlingManagers;
-  private final HttpClient httpClient;
+  private final Duration throttlingDelay;
 
-  public FeedClient() {
+  /// Creates a new instance of FeedClient.
+  ///
+  /// @param throttlingDelay delay in seconds between requests to the same host
+  public FeedClient(long throttlingDelay) {
     this.httpClient =
         HttpClient.newBuilder()
             .connectTimeout(HTTP_CLIENT_TIMEOUT)
@@ -36,6 +39,7 @@ class FeedClient {
             .build();
 
     this.throttlingManagers = new ConcurrentHashMap<>();
+    this.throttlingDelay = Duration.ofSeconds(throttlingDelay);
   }
 
   /// Requests the given `url` and returns the raw response body if the server responds with 200 OK.
@@ -83,7 +87,6 @@ class FeedClient {
 
   private ThrottlingManager<HttpResponse<byte[]>> throttlingManager(URI uri) {
     return throttlingManagers.computeIfAbsent(
-        uri.getHost().toLowerCase(Locale.ROOT),
-        _ -> new ThrottlingManager<>(REQUEST_THROTTLING_DURATION));
+        uri.getHost().toLowerCase(Locale.ROOT), _ -> new ThrottlingManager<>(throttlingDelay));
   }
 }
