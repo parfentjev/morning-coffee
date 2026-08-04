@@ -1,33 +1,50 @@
 package ee.fakeplastictrees.morningcoffee;
 
+import static java.util.Optional.ofNullable;
+
 import ee.fakeplastictrees.morningcoffee.reader.ScheduledFeedReader;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.WebServer;
+import java.io.Closeable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /// Starts the Morning Coffee application.
-public class App {
+public class App implements Closeable {
   private static final Logger logger = LogManager.getLogger();
+
+  private Repository repository;
+  private ScheduledFeedReader reader;
+  private WebServer server;
 
   /// Starts application services.
   static void main() {
     try {
-      new App().start();
+      var app = new App();
+      app.start();
+
+      Runtime.getRuntime().addShutdownHook(new Thread(app::close));
     } catch (Exception e) {
       logger.error("unhandled exception", e);
       System.exit(1);
     }
   }
 
-  private void start() throws Exception {
+  public void start() throws Exception {
     var config = new Config();
-    var repository = new Repository(config.repository());
+    repository = new Repository(config.repository());
 
-    var reader = new ScheduledFeedReader(config.reader(), repository);
+    reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();
 
-    var server = new WebServer(config.webServer(), repository);
+    server = new WebServer(config.webServer(), repository);
     server.start();
+  }
+
+  @Override
+  public void close() {
+    ofNullable(reader).ifPresent(ScheduledFeedReader::close);
+    ofNullable(server).ifPresent(WebServer::close);
+    ofNullable(repository).ifPresent(Repository::close);
   }
 }

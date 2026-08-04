@@ -12,7 +12,8 @@ public class ThrottlingManagerTest {
     var expectedDelay = Duration.ofSeconds(2);
     var manager = new ThrottlingManager<Long>(expectedDelay);
 
-    Duration time1, time2;
+    Duration time1;
+    Duration time2;
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
       var request1 = executor.submit(() -> manager.execute(System::nanoTime));
       var request2 = executor.submit(() -> manager.execute(System::nanoTime));
@@ -33,7 +34,8 @@ public class ThrottlingManagerTest {
     var manager1 = new ThrottlingManager<Long>(delay);
     var manager2 = new ThrottlingManager<Long>(delay);
 
-    Duration time1, time2;
+    Duration time1;
+    Duration time2;
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
       var request1 = executor.submit(() -> manager1.execute(System::nanoTime));
       var request2 = executor.submit(() -> manager2.execute(System::nanoTime));

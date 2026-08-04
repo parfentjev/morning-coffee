@@ -3,6 +3,7 @@ package ee.fakeplastictrees.morningcoffee.reader;
 import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.model.Feed;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -14,7 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /// Polls configured feeds and persists new entries on a fixed schedule.
-public class ScheduledFeedReader {
+public class ScheduledFeedReader implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
   private final Config.Reader config;
@@ -41,8 +42,6 @@ public class ScheduledFeedReader {
 
   /// Starts scheduled feed polling.
   public void start() {
-    Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
-
     var interval = config.pollIntervalSeconds();
     var timeUnit = TimeUnit.SECONDS;
     scheduledExecutor.scheduleWithFixedDelay(
@@ -60,12 +59,6 @@ public class ScheduledFeedReader {
         timeUnit);
 
     logger.info("scheduled feed reader to run every {} {}", interval, timeUnit.name());
-  }
-
-  private void stop() {
-    logger.info("shutting down");
-    scheduledExecutor.shutdownNow();
-    fetchFeedExecutor.shutdownNow();
   }
 
   private void fetchFeeds() throws InterruptedException {
@@ -91,17 +84,35 @@ public class ScheduledFeedReader {
   private void processFeed(Feed feed) throws InterruptedException {
     try {
       var response = feedClient.fetchFeed(feed.url());
-      var entries = feedParser.parseResponse(response);
-
-      entries.forEach(
-          entry -> {
-            entry.setFeedId(feed.id());
-            repository.saveFeedEntry(entry);
-          });
+      var entries =
+          feedParser.parseResponse(response).stream()
+              .peek(entry -> entry.setFeedId(feed.id()))
+              .toList();
+      repository.saveFeedEntries(entries);
     } catch (FeedClientException e) {
       logger.warn("failed to fetch feed: {}", feed.url(), e);
     } catch (FeedParserException e) {
       logger.warn("failed to parse feed: {}", feed.url(), e);
+    }
+  }
+
+  @Override
+  public void close() {
+    try {
+      logger.info("shutting down");
+      scheduledExecutor.shutdownNow();
+      fetchFeedExecutor.shutdownNow();
+
+      if (scheduledExecutor.awaitTermination(5, TimeUnit.SECONDS) == false) {
+        logger.warn("failed to stop scheduledExecutor in time");
+      }
+
+      if (fetchFeedExecutor.awaitTermination(5, TimeUnit.SECONDS) == false) {
+        logger.warn("failed to stop fetchFeedExecutor in time");
+      }
+    } catch (InterruptedException e) {
+      logger.warn("interrupted while awaiting termination", e);
+      Thread.currentThread().interrupt();
     }
   }
 }
