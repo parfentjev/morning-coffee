@@ -9,7 +9,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,14 +70,6 @@ public class ScheduledFeedReader {
     for (var feed : repository.getFeeds()) {
       tasks.add(
           () -> {
-            // Sometimes my genious is frightening...
-            // Or how to avoid 429 on reddit :D
-            //
-            // I know, some per-host throttling should be added,
-            // But not today. I want to go play The Outer Worlds 2.
-            var delayMs = ThreadLocalRandom.current().nextLong(60_000);
-            Thread.sleep(delayMs);
-
             processFeed(feed);
 
             return null;
