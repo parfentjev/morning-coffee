@@ -38,23 +38,25 @@ public record Config(Repository repository, Reader reader, WebServer webServer) 
   public record Repository(String postgresUrl, String postgresUser, String postgresPassword) {
     /// Loads repository configuration from environment variables.
     public Repository() {
-      var postgresUrl = getEnv("REPOSITORY_POSTGRES_URL");
-      var postgresUser = getEnv("REPOSITORY_POSTGRES_USER");
-      var postgresPassword = getEnv("REPOSITORY_POSTGRES_PASSWORD");
+      var url = getEnv("REPOSITORY_POSTGRES_URL");
+      var user = getEnv("REPOSITORY_POSTGRES_USER");
+      var password = getEnv("REPOSITORY_POSTGRES_PASSWORD");
 
-      this(postgresUrl, postgresUser, postgresPassword);
+      this(url, user, password);
     }
   }
 
   /// Configures feed polling.
   ///
   /// @param pollIntervalSeconds delay between feed polls, in seconds
-  public record Reader(Long pollIntervalSeconds) {
+  /// @param requestThrottlingDelaySeconds delay in seconds between requests to the same host
+  public record Reader(Long pollIntervalSeconds, Long requestThrottlingDelaySeconds) {
     /// Loads reader configuration from environment variables.
     public Reader() {
-      var pollIntervalSeconds = getEnv("READER_POLL_INTERVAL_SECONDS", Long::valueOf);
+      var pollInterval = getEnv("READER_POLL_INTERVAL_SECONDS", Long::valueOf);
+      var throttlingDelay = getEnv("READER_REQUEST_THROTTLING_DELAY_SECONDS", Long::valueOf);
 
-      this(pollIntervalSeconds);
+      this(pollInterval, throttlingDelay);
     }
   }
 
@@ -65,10 +67,10 @@ public record Config(Repository repository, Reader reader, WebServer webServer) 
   public record WebServer(int serverPort, int entriesPerPage) {
     /// Loads web server configuration from environment variables.
     public WebServer() {
-      var serverPort = getEnv("WEB_SERVER_PORT", Integer::valueOf);
+      var port = getEnv("WEB_SERVER_PORT", Integer::valueOf);
       var entriesPerPage = getEnv("WEB_SERVER_ENTRIES_PER_PAGE", Integer::valueOf);
 
-      this(serverPort, entriesPerPage);
+      this(port, entriesPerPage);
     }
   }
 }
