@@ -6,16 +6,18 @@ import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.handler.HandlerManager;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateException;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /// Serves feed entries over HTTP.
-public class WebServer {
+public class WebServer implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
   private final Config.WebServer config;
@@ -39,8 +41,6 @@ public class WebServer {
   /// @throws WebServerException if the HTTP server cannot be created
   /// @throws TemplateException if application templates cannot be loaded
   public void start() throws WebServerException, TemplateException {
-    Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
-
     var templateService = TemplateService.init();
 
     server = createHttpServer(config.serverPort());
@@ -66,12 +66,21 @@ public class WebServer {
     }
   }
 
-  private void stop() {
-    logger.info("shutting down");
-    if (server != null) {
-      server.stop(5);
-    }
+  @Override
+  public void close() {
+    try {
+      logger.info("shutting down");
+      if (server != null) {
+        server.stop(5);
+      }
 
-    requestExecutor.shutdownNow();
+      requestExecutor.shutdownNow();
+      if (requestExecutor.awaitTermination(5, TimeUnit.SECONDS) == false) {
+        logger.warn("failed to stop requestExecutor in time");
+      }
+    } catch (InterruptedException e) {
+      logger.warn("interrupted while awaiting termination", e);
+      Thread.currentThread().interrupt();
+    }
   }
 }

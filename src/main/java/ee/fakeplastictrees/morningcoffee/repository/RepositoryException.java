@@ -6,7 +6,7 @@ import java.io.Serial;
 public class RepositoryException extends Exception {
   @Serial private static final long serialVersionUID = 1L;
 
-  RepositoryException(Exception parent) {
-    super(parent);
+  RepositoryException(String message, Exception parent) {
+    super(message, parent);
   }
 }
