@@ -31,8 +31,9 @@ public class Repository implements Closeable {
 
   /// Returns feeds enabled for polling.
   ///
-  /// @return enabled feeds, or an empty list if the query fails
-  public List<Feed> getFeeds() {
+  /// @return enabled feeds
+  /// @throws RepositoryException if feeds cannot be retrieved
+  public List<Feed> getFeeds() throws RepositoryException {
     var feeds = new ArrayList<Feed>();
     var sql =
         """
@@ -48,8 +49,7 @@ public class Repository implements Closeable {
         feeds.add(new Feed(id, url));
       }
     } catch (SQLException e) {
-      logger.error("failed to select feeds", e);
-      return List.of();
+      throw new RepositoryException("failed to select feeds", e);
     }
 
     return feeds;
@@ -59,7 +59,8 @@ public class Repository implements Closeable {
   /// external ID won't be inserted twice.
   ///
   /// @param entries feed entry list to save
-  public void saveFeedEntries(List<FeedEntry> entries) {
+  /// @throws RepositoryException if feed entries cannot be saved
+  public void saveFeedEntries(List<FeedEntry> entries) throws RepositoryException {
     var sql =
         """
         insert into entries(external_id, published_at, feed_id, title, link)
@@ -91,14 +92,15 @@ public class Repository implements Closeable {
         throw e;
       }
     } catch (SQLException e) {
-      logger.error("failed to insert feed entries", e);
+      throw new RepositoryException("failed to insert feed entries", e);
     }
   }
 
   /// Returns the latest feed entries in descending entry ID order.
   ///
   /// @param n maximum number of entries to return
-  /// @return up to `n` latest feed entries; may be empty if the query fails
+  /// @return up to `n` latest feed entries
+  /// @throws RepositoryException if feed entries cannot be retrieved
   public List<FeedEntryDto> getEntries(int n) throws RepositoryException {
     var entries = new ArrayList<FeedEntryDto>();
     var sql =
@@ -126,7 +128,7 @@ public class Repository implements Closeable {
         }
       }
     } catch (SQLException e) {
-      throw new RepositoryException(e);
+      throw new RepositoryException("failed to select feed entries", e);
     }
 
     return entries;

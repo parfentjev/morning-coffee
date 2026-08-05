@@ -17,7 +17,7 @@ public class App implements Closeable {
   private ScheduledFeedReader reader;
   private WebServer server;
 
-  /// Starts application services.
+  /// Starts application.
   static void main() {
     try {
       var app = new App();
@@ -30,6 +30,7 @@ public class App implements Closeable {
     }
   }
 
+  /// Starts application services.
   public void start() throws Exception {
     var config = new Config();
     repository = new Repository(config.repository());

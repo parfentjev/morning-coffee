@@ -3,6 +3,7 @@ package ee.fakeplastictrees.morningcoffee.reader;
 import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.model.Feed;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
+import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -63,13 +64,18 @@ public class ScheduledFeedReader implements Closeable {
 
   private void fetchFeeds() throws InterruptedException {
     var tasks = new ArrayList<Callable<Void>>();
-    for (var feed : repository.getFeeds()) {
-      tasks.add(
-          () -> {
-            processFeed(feed);
+    try {
+      for (var feed : repository.getFeeds()) {
+        tasks.add(
+            () -> {
+              processFeed(feed);
 
-            return null;
-          });
+              return null;
+            });
+      }
+    } catch (RepositoryException e) {
+      logger.warn("failed to get feeds", e);
+      return;
     }
 
     for (var future : fetchFeedExecutor.invokeAll(tasks)) {
@@ -93,6 +99,8 @@ public class ScheduledFeedReader implements Closeable {
       logger.warn("failed to fetch feed: {}", feed.url(), e);
     } catch (FeedParserException e) {
       logger.warn("failed to parse feed: {}", feed.url(), e);
+    } catch (RepositoryException e) {
+      logger.warn("failed to save feed entries: {}", feed.url(), e);
     }
   }
 
