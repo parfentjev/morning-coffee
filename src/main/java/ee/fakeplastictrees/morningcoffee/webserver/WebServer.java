@@ -4,7 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.handler.HandlerManager;
-import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateException;
+import ee.fakeplastictrees.morningcoffee.webserver.render.StaticResourceService;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.io.Closeable;
 import java.io.IOException;
@@ -22,6 +22,8 @@ public class WebServer implements Closeable {
 
   private final Config.WebServer config;
   private final Repository repository;
+  private final TemplateService templateService;
+  private final StaticResourceService staticResourceService;
   private final ExecutorService requestExecutor;
 
   private HttpServer server;
@@ -30,21 +32,27 @@ public class WebServer implements Closeable {
   ///
   /// @param config web server configuration
   /// @param repository feed repository
-  public WebServer(Config.WebServer config, Repository repository) {
+  /// @param templateService service that manages dynamic HTML templates
+  /// @param staticResourceService service that manages static resources
+  public WebServer(
+      Config.WebServer config,
+      Repository repository,
+      TemplateService templateService,
+      StaticResourceService staticResourceService) {
     this.config = config;
     this.repository = repository;
+    this.templateService = templateService;
+    this.staticResourceService = staticResourceService;
     this.requestExecutor = Executors.newVirtualThreadPerTaskExecutor();
   }
 
   /// Starts accepting HTTP requests.
   ///
   /// @throws WebServerException if the HTTP server cannot be created
-  /// @throws TemplateException if application templates cannot be loaded
-  public void start() throws WebServerException, TemplateException {
-    var templateService = TemplateService.init();
-
+  public void start() throws WebServerException {
     server = createHttpServer(config.serverPort());
-    HandlerManager.registerHandlers(config, server, templateService, repository);
+    HandlerManager.registerHandlers(
+        config, repository, server, templateService, staticResourceService);
     server.setExecutor(requestExecutor);
     server.start();
 

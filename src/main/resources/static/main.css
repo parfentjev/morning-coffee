@@ -1,0 +1,27 @@
+body {
+    background-color: #eff1f5;
+    color: #4c4f69;
+    font-family: Open Sans, Arial;
+    line-height: 1.4;
+    margin: 2em auto;
+    max-width: 1200px;
+}
+
+footer {
+    text-align: center;
+}
+
+a {
+    color: #04a5e5;
+}
+
+a:visited {
+    color: #8839ef;
+}
+
+.list-entry span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}
