@@ -5,6 +5,8 @@ import static java.util.Optional.ofNullable;
 import ee.fakeplastictrees.morningcoffee.reader.ScheduledFeedReader;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.WebServer;
+import ee.fakeplastictrees.morningcoffee.webserver.render.StaticResourceService;
+import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.io.Closeable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +33,8 @@ public class App implements Closeable {
   }
 
   /// Starts application services.
+  ///
+  /// @throws Exception if an application service cannot be initialized or started
   public void start() throws Exception {
     var config = new Config();
     repository = new Repository(config.repository());
@@ -38,7 +42,10 @@ public class App implements Closeable {
     reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();
 
-    server = new WebServer(config.webServer(), repository);
+    var templateService = TemplateService.init();
+    var staticResourceService = StaticResourceService.init();
+
+    server = new WebServer(config.webServer(), repository, templateService, staticResourceService);
     server.start();
   }
 

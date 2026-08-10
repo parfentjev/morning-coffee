@@ -1,7 +1,7 @@
 package ee.fakeplastictrees.morningcoffee.webserver.render;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import ee.fakeplastictrees.morningcoffee.util.ResourceManager;
+import ee.fakeplastictrees.morningcoffee.util.ResourceManagerException;
 
 /// Loads and provides HTML templates.
 public class TemplateService {
@@ -16,33 +16,30 @@ public class TemplateService {
   /// Loads application templates from resources.
   ///
   /// @return initialized template service
-  /// @throws TemplateException if a template cannot be loaded
-  public static TemplateService init() throws TemplateException {
+  /// @throws ResourceManagerException if a template resource cannot be loaded
+  public static TemplateService init() throws ResourceManagerException {
     var indexTemplate = new IndexTemplate(loadFromResources("index.html"));
     var feedEntryTemplate = new FeedEntryTemplate(loadFromResources("feed_entry.html"));
 
     return new TemplateService(indexTemplate, feedEntryTemplate);
   }
 
-  private static String loadFromResources(String templateFile) throws TemplateException {
+  private static String loadFromResources(String templateFile) throws ResourceManagerException {
     var resource = "templates/%s".formatted(templateFile);
-    try (var stream = TemplateService.class.getClassLoader().getResourceAsStream(resource)) {
-      if (stream == null) {
-        var message = "failed to load template resource: %s".formatted(resource);
-        throw new TemplateException(message);
-      }
 
-      return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-    } catch (IOException e) {
-      var message = "failed to read template resource";
-      throw new TemplateException(message, e);
-    }
+    return ResourceManager.loadResource(resource).toString();
   }
 
+  /// Returns template for the index page.
+  ///
+  /// @return index-page template
   public IndexTemplate getIndexTemplate() {
     return indexTemplate;
   }
 
+  /// Returns template for a feed entry.
+  ///
+  /// @return feed-entry template
   public FeedEntryTemplate getFeedEntryTemplate() {
     return feedEntryTemplate;
   }

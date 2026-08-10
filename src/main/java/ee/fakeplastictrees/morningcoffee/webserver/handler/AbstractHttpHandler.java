@@ -3,59 +3,57 @@ package ee.fakeplastictrees.morningcoffee.webserver.handler;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/// Handles requests matching one HTTP method and request-path pattern.
 abstract class AbstractHttpHandler implements HttpHandler {
   private static final Logger logger = LogManager.getLogger();
 
-  private static final String CONTENT_TYPE_TEXT_PLAIN = "text/plain; charset=utf-8";
-  private static final String CONTENT_TYPE_TEXT_HTML = "text/html; charset=utf-8";
+  protected static final String CONTENT_TYPE_TEXT_PLAIN = "text/plain; charset=utf-8";
+  protected static final String CONTENT_TYPE_TEXT_HTML = "text/html; charset=utf-8";
 
   @Override
   public final void handle(HttpExchange exchange) {
-    String contentType;
-    byte[] body;
-    int statusCode;
-
     logger.debug("{} {}", exchange.getRequestMethod(), exchange.getRequestURI());
 
     var matchingMethod = exchange.getRequestMethod().equals(requestMethod());
-    var matchingPath = exchange.getRequestURI().toString().equals(requestPath());
+    var matchingPath = exchange.getRequestURI().toString().matches(requestPath());
+
+    Response response;
     if (matchingMethod && matchingPath) {
       try {
-        var response = response();
-        statusCode = response.getStatusCode();
-        body = response.getBytes();
-        contentType = CONTENT_TYPE_TEXT_HTML;
+        response = response(exchange);
       } catch (Exception e) {
         logger.error("http handler error", e);
-        statusCode = HttpURLConnection.HTTP_INTERNAL_ERROR;
-        body = "Internal Server Error".getBytes();
-        contentType = CONTENT_TYPE_TEXT_PLAIN;
+        response = Response.internalError();
       }
     } else if (!matchingPath) {
-      statusCode = HttpURLConnection.HTTP_NOT_FOUND;
-      body = "This page does not exist.".getBytes();
-      contentType = CONTENT_TYPE_TEXT_PLAIN;
+      response = Response.notFound();
     } else {
-      statusCode = HttpURLConnection.HTTP_BAD_REQUEST;
-      body = "Bad request.".getBytes();
-      contentType = CONTENT_TYPE_TEXT_PLAIN;
+      response = Response.badRequest();
     }
 
-    write(exchange, statusCode, body, contentType);
+    write(exchange, response.statusCode(), response.body(), response.contentType());
   }
 
-  @SuppressWarnings("SameReturnValue")
+  /// Returns the accepted HTTP method.
+  ///
+  /// @return accepted HTTP method
   protected abstract String requestMethod();
 
-  @SuppressWarnings("SameReturnValue")
+  /// Returns the regular expression matched against the request URI.
+  ///
+  /// @return accepted request-path pattern
   protected abstract String requestPath();
 
-  protected abstract Response response() throws Exception;
+  /// Builds a response for a matching request.
+  ///
+  /// @param exchange current HTTP exchange
+  /// @return response to send
+  /// @throws Exception if the response cannot be built
+  protected abstract Response response(HttpExchange exchange) throws Exception;
 
   private void write(HttpExchange exchange, int statusCode, byte[] body, String contentType) {
     try (exchange) {
@@ -75,26 +73,84 @@ abstract class AbstractHttpHandler implements HttpHandler {
     }
   }
 
+  /// Represents an HTTP response produced by a handler.
   protected static class Response {
-    private final String body;
+    private final String contentType;
+    private final byte[] body;
     private final int statusCode;
 
-    private Response(String body, int statusCode) {
+    private Response(String contentType, byte[] body, int statusCode) {
+      this.contentType = contentType;
       this.body = body;
       this.statusCode = statusCode;
     }
 
-    @SuppressWarnings("SameParameterValue")
-    protected static Response of(String body, int statusCode) {
-      return new Response(body, statusCode);
+    /// Creates a response from a UTF-8 string body.
+    ///
+    /// @param contentType response media type
+    /// @param body response body
+    /// @param statusCode HTTP status code
+    /// @return response
+    protected static Response of(String contentType, String body, int statusCode) {
+      return new Response(contentType, body.getBytes(StandardCharsets.UTF_8), statusCode);
     }
 
-    protected int getStatusCode() {
+    /// Creates a response from a byte body.
+    ///
+    /// @param contentType response media type
+    /// @param body response body
+    /// @param statusCode HTTP status code
+    /// @return response
+    protected static Response of(String contentType, byte[] body, int statusCode) {
+      return new Response(contentType, body, statusCode);
+    }
+
+    /// Creates a 400 Bad Request response.
+    ///
+    /// @return bad-request response
+    protected static Response badRequest() {
+      var body = "Bad request.".getBytes(StandardCharsets.UTF_8);
+
+      return new Response(CONTENT_TYPE_TEXT_PLAIN, body, 400);
+    }
+
+    /// Creates a 404 Not Found response.
+    ///
+    /// @return not-found response
+    protected static Response notFound() {
+      var body = "This page does not exist.".getBytes(StandardCharsets.UTF_8);
+
+      return new Response(CONTENT_TYPE_TEXT_PLAIN, body, 404);
+    }
+
+    /// Creates a 500 Internal Server Error response.
+    ///
+    /// @return internal-error response
+    protected static Response internalError() {
+      var body = "Internal server error.".getBytes(StandardCharsets.UTF_8);
+
+      return new Response(CONTENT_TYPE_TEXT_PLAIN, body, 500);
+    }
+
+    /// Returns response media type.
+    ///
+    /// @return response media type
+    protected String contentType() {
+      return contentType;
+    }
+
+    /// Returns response body.
+    ///
+    /// @return response body
+    protected byte[] body() {
+      return body;
+    }
+
+    /// Returns HTTP status code.
+    ///
+    /// @return HTTP status code
+    protected int statusCode() {
       return statusCode;
-    }
-
-    protected byte[] getBytes() {
-      return body.getBytes(StandardCharsets.UTF_8);
     }
   }
 }
