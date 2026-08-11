@@ -5,7 +5,10 @@ import ee.fakeplastictrees.morningcoffee.model.Feed;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import java.io.Closeable;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -88,20 +91,53 @@ public class ScheduledFeedReader implements Closeable {
   }
 
   private void processFeed(Feed feed) throws InterruptedException {
+    // fetch
+    HttpResponse<byte[]> response;
     try {
-      var response = feedClient.fetchFeed(feed.url());
+      response = feedClient.fetchFeed(feed.url());
+    } catch (FeedClientException e) {
+      logger.warn("failed to fetch feed: {}", feed.url(), e);
+      return;
+    }
+
+    // process
+    try {
       var entries =
-          feedParser.parseResponse(response).stream()
+          feedParser.parseResponse(response.body()).stream()
               .peek(entry -> entry.setFeedId(feed.id()))
               .toList();
       repository.saveFeedEntries(entries);
-    } catch (FeedClientException e) {
-      logger.warn("failed to fetch feed: {}", feed.url(), e);
     } catch (FeedParserException e) {
+      if (logger.isDebugEnabled()) {
+        var responseData = extractResponseData(response);
+        logger.debug("response data for {}: {}", feed.url(), responseData);
+      }
+
       logger.warn("failed to parse feed: {}", feed.url(), e);
     } catch (RepositoryException e) {
       logger.warn("failed to save feed entries: {}", feed.url(), e);
     }
+  }
+
+  private Map<String, Object> extractResponseData(HttpResponse<byte[]> response) {
+    var body = response.body();
+    var truncatedBodyLength = Math.min(body.length, 512);
+
+    return Map.of(
+        "Status",
+        response.statusCode(),
+        "URI",
+        response.uri(),
+        "Content-Type",
+        response.headers().firstValue("Content-Type").orElse("absent"),
+        "Content-Length",
+        response.headers().firstValue("Content-Length").orElse("absent"),
+        "Server",
+        response.headers().firstValue("Server").orElse("absent"),
+        "Body-Length",
+        body.length,
+        "Body-Truncated",
+        new String(body, 0, truncatedBodyLength, StandardCharsets.UTF_8));
   }
 
   @Override
