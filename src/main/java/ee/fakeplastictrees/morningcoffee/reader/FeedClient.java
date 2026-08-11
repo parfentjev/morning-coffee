@@ -19,8 +19,6 @@ class FeedClient {
   private static final Logger logger = LogManager.getLogger();
 
   private static final int MAX_RESPONSE_BODY_BYTES = 5 * 1024 * 1024;
-  private static final String USER_AGENT =
-      "MorningCoffee/1.0 (+https://github.com/parfentjev/morning-coffee)";
   private static final Duration HTTP_CLIENT_TIMEOUT = Duration.ofSeconds(10);
 
   private final HttpClient httpClient;
@@ -46,9 +44,10 @@ class FeedClient {
   ///
   /// @param url address of an RSS/Atom feed
   /// @throws FeedClientException if the URL is malformed, the request fails, or the server returns
-  /// an unexpected status code
+  ///   an unexpected status code
   /// @throws InterruptedException if the thread is interrupted
-  public byte[] fetchFeed(String url) throws FeedClientException, InterruptedException {
+  public HttpResponse<byte[]> fetchFeed(String url)
+      throws FeedClientException, InterruptedException {
     try {
       var uri = new URI(url);
       logger.debug("fetching feed: {}", uri);
@@ -61,7 +60,7 @@ class FeedClient {
         throw new FeedClientException(message);
       }
 
-      return response.body();
+      return response;
     } catch (URISyntaxException e) {
       var message = "failed to parse feed url: %s".formatted(url);
       throw new FeedClientException(message, e);
@@ -73,7 +72,11 @@ class FeedClient {
 
   private HttpRequest request(URI uri) {
     return HttpRequest.newBuilder()
-        .header("User-Agent", USER_AGENT)
+        .header("User-Agent", "MorningCoffee/1.0 (+https://github.com/parfentjev/morning-coffee)")
+        .header(
+            "Accept",
+            "application/atom+xml, application/rss+xml, application/xml;q=0.9, text/xml;q=0.8,"
+                + " */*;q=0.1")
         .uri(uri)
         .timeout(HTTP_CLIENT_TIMEOUT)
         .GET()
