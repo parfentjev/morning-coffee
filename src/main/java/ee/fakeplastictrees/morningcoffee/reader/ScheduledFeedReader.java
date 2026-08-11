@@ -108,9 +108,12 @@ public class ScheduledFeedReader implements Closeable {
               .toList();
       repository.saveFeedEntries(entries);
     } catch (FeedParserException e) {
-      var responseData = extractResponseData(response);
+      if (logger.isDebugEnabled()) {
+        var responseData = extractResponseData(response);
+        logger.debug("response data for {}: {}", feed.url(), responseData);
+      }
 
-      logger.warn("failed to parse feed: {}; responseData: {}", feed.url(), responseData, e);
+      logger.warn("failed to parse feed: {}", feed.url(), e);
     } catch (RepositoryException e) {
       logger.warn("failed to save feed entries: {}", feed.url(), e);
     }
