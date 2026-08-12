@@ -40,7 +40,8 @@ public class ScheduledFeedReader implements Closeable {
     this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
     this.fetchFeedExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
-    this.feedClient = new FeedClient(config.requestThrottlingDelaySeconds());
+    this.feedClient =
+        new FeedClient(config.requestThrottlingDelaySeconds(), config.blockedNetworks());
     this.feedParser = new FeedParser();
   }
 
