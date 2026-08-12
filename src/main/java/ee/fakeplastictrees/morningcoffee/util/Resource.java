@@ -12,6 +12,7 @@ public record Resource(String contentType, byte[] contents) {
     this.contents = contents.clone();
   }
 
+  @Override
   public byte[] contents() {
     return contents.clone();
   }

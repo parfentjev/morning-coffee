@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <project
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
 >
     <modelVersion>4.0.0</modelVersion>
 
@@ -26,13 +26,13 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
-			<dependency>
-				<groupId>org.junit</groupId>
-				<artifactId>junit-bom</artifactId>
-				<version>6.1.2</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>6.1.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -63,6 +63,12 @@
             <artifactId>rome</artifactId>
             <version>2.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.seancfoley</groupId>
+            <artifactId>ipaddress</artifactId>
+            <version>5.6.2</version>
+            <scope>compile</scope>
+        </dependency>
         <!-- repository -->
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -70,9 +76,9 @@
             <version>42.7.13</version>
         </dependency>
         <dependency>
-           <groupId>com.zaxxer</groupId>
-           <artifactId>HikariCP</artifactId>
-           <version>7.1.0</version>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>7.1.0</version>
         </dependency>
         <!-- controller -->
         <dependency>
@@ -81,11 +87,18 @@
             <version>1.4.0</version>
         </dependency>
         <!-- testing -->
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- et al. -->
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>4.10.3</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -135,14 +148,14 @@
                             </filters>
                             <transformers>
                                 <transformer
-                  implementation="org.apache.logging.log4j.maven.plugins.shade.transformer.Log4j2PluginCacheFileTransformer"
-                />
+                                    implementation="org.apache.logging.log4j.maven.plugins.shade.transformer.Log4j2PluginCacheFileTransformer"
+                                />
                                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"
-                />
+                                    implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"
+                                />
                                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"
-                >
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"
+                                >
                                     <mainClass>ee.fakeplastictrees.morningcoffee.App</mainClass>
                                     <manifestEntries>
                                         <Multi-Release>true</Multi-Release>
@@ -154,10 +167,10 @@
                 </executions>
             </plugin>
             <!-- testing -->
-			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.5.6</version>
-			</plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.6</version>
+            </plugin>
             <!-- lint checks -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

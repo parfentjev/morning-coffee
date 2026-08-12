@@ -36,7 +36,7 @@ public class App implements Closeable {
   ///
   /// @throws Exception if an application service cannot be initialized or started
   public void start() throws Exception {
-    var config = new Config();
+    var config = Config.init();
     repository = new Repository(config.repository());
 
     reader = new ScheduledFeedReader(config.reader(), repository);
