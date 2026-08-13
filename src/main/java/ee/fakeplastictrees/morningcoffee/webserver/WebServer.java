@@ -50,7 +50,7 @@ public class WebServer implements Closeable {
   ///
   /// @throws WebServerException if the HTTP server cannot be created
   public void start() throws WebServerException {
-    server = createHttpServer(config.serverPort());
+    server = createHttpServer(config.serverHostname(), config.serverPort());
     HandlerManager.registerHandlers(
         config, repository, server, templateService, staticResourceService);
     server.setExecutor(requestExecutor);
@@ -59,9 +59,9 @@ public class WebServer implements Closeable {
     logger.info("ready to handle requests");
   }
 
-  private HttpServer createHttpServer(int port) throws WebServerException {
+  private HttpServer createHttpServer(String hostname, int port) throws WebServerException {
     try {
-      return HttpServer.create(new InetSocketAddress(port), 0);
+      return HttpServer.create(new InetSocketAddress(hostname, port), 0);
     } catch (IllegalArgumentException e) {
       var message = "invalid serverPort number: %d".formatted(port);
       throw new WebServerException(message, e);

@@ -143,12 +143,18 @@ public final class Config {
 
   /// Configures HTTP serving.
   public static final class WebServer {
+    private final String serverHostname;
     private final int serverPort;
     private final int entriesPerPage;
 
     private WebServer() {
+      this.serverHostname = getEnv("WEB_SERVER_HOSTNAME");
       this.serverPort = getEnv("WEB_SERVER_PORT", Integer::valueOf);
       this.entriesPerPage = getEnv("WEB_SERVER_ENTRIES_PER_PAGE", Integer::valueOf);
+    }
+
+    public String serverHostname() {
+      return serverHostname;
     }
 
     public int serverPort() {
