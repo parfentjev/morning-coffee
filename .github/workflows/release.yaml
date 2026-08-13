@@ -3,7 +3,7 @@ name: release
 on:
   push:
     tags:
-      - "v*"
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   build-and-push:
@@ -20,6 +20,6 @@ jobs:
       - name: Set up podman
         run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ${{ env.REGISTRY }} --username ${{ github.actor }} --password-stdin
       - name: Build image
-        run: podman build -t ${{ env.IMAGE_TAG }} .
+        run: podman build -t "$IMAGE_TAG" .
       - name: Publish image
-        run: podman push ${{ env.IMAGE_TAG }}
+        run: podman push "$IMAGE_TAG"

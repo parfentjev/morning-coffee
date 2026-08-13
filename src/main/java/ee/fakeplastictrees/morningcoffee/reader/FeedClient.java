@@ -76,11 +76,11 @@ class FeedClient {
   private HttpRequest request(URI uri) throws FeedClientException {
     try {
       var targetAddresses = new HostName(uri.getHost()).toAllAddresses();
-      var blocked = findOverlappingNetwork(targetAddresses);
-      if (blocked.isPresent()) {
+      var overlap = findOverlappingNetwork(targetAddresses);
+      if (overlap.isPresent()) {
         var message =
             "%s (%s) belongs to a blocked network: %s"
-                .formatted(uri, Arrays.toString(targetAddresses), blocked.get());
+                .formatted(uri, Arrays.toString(targetAddresses), overlap.get());
         throw new FeedClientException(message);
       }
     } catch (UnknownHostException e) {
