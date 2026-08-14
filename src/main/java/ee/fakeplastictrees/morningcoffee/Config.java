@@ -49,19 +49,6 @@ public final class Config {
     return webServer;
   }
 
-  private static String getEnv(String key) {
-    return getEnv(key, v -> v);
-  }
-
-  private static <T> T getEnv(String key, Function<String, T> parser) {
-    var value = System.getenv(key);
-    if (value == null || value.isBlank()) {
-      throw new RuntimeException("Env property is missing: " + key);
-    }
-
-    return parser.apply(value);
-  }
-
   /// Configures PostgreSQL access.
   public static final class Repository {
     private final String postgresUrl;
@@ -69,9 +56,10 @@ public final class Config {
     private final String postgresPassword;
 
     private Repository() {
-      this.postgresUrl = getEnv("REPOSITORY_POSTGRES_URL");
-      this.postgresUser = getEnv("REPOSITORY_POSTGRES_USER");
-      this.postgresPassword = getEnv("REPOSITORY_POSTGRES_PASSWORD");
+      var env = new EnvironmentReader("REPOSITORY_POSTGRES");
+      this.postgresUrl = env.required("URL");
+      this.postgresUser = env.required("USER");
+      this.postgresPassword = env.required("PASSWORD");
     }
 
     public String postgresUrl() {
@@ -92,12 +80,18 @@ public final class Config {
     private final long pollIntervalSeconds;
     private final long requestThrottlingDelaySeconds;
     private final List<IPAddress> blockedNetworks;
+    private final int maxParallelFetches;
+    private final int maxEntriesPerFetch;
 
     private Reader() {
-      this.pollIntervalSeconds = getEnv("READER_POLL_INTERVAL_SECONDS", Long::valueOf);
+      var env = new EnvironmentReader("READER");
+      this.pollIntervalSeconds = env.optional("POLL_INTERVAL_SECONDS", 1800L, Long::valueOf);
       this.requestThrottlingDelaySeconds =
-          getEnv("READER_REQUEST_THROTTLING_DELAY_SECONDS", Long::valueOf);
-      this.blockedNetworks = getEnv("READER_BLOCKED_NETWORKS", Reader::mapStringToIpAddress);
+          env.optional("REQUEST_THROTTLING_DELAY_SECONDS", 30L, Long::valueOf);
+      this.blockedNetworks =
+          env.optional("BLOCKED_NETWORKS", List.of(), Reader::mapStringToIpAddress);
+      this.maxParallelFetches = env.optional("MAX_PARALLEL_FETCHES", 5, Integer::valueOf);
+      this.maxEntriesPerFetch = env.optional("MAX_ENTRIES_PER_FETCH", 10, Integer::valueOf);
     }
 
     public long pollIntervalSeconds() {
@@ -113,6 +107,14 @@ public final class Config {
         justification = "List is created with Stream.toList(), which is immutable.")
     public List<IPAddress> blockedNetworks() {
       return blockedNetworks;
+    }
+
+    public int maxParallelFetches() {
+      return maxParallelFetches;
+    }
+
+    public int maxEntriesPerFetch() {
+      return maxEntriesPerFetch;
     }
 
     private static List<IPAddress> mapStringToIpAddress(String input) {
@@ -148,9 +150,10 @@ public final class Config {
     private final int entriesPerPage;
 
     private WebServer() {
-      this.serverHostname = getEnv("WEB_SERVER_HOSTNAME");
-      this.serverPort = getEnv("WEB_SERVER_PORT", Integer::valueOf);
-      this.entriesPerPage = getEnv("WEB_SERVER_ENTRIES_PER_PAGE", Integer::valueOf);
+      var env = new EnvironmentReader("WEB_SERVER");
+      this.serverHostname = env.optional("HOSTNAME", "127.0.0.1");
+      this.serverPort = env.optional("PORT", 8080, Integer::valueOf);
+      this.entriesPerPage = env.optional("ENTRIES_PER_PAGE", 100, Integer::valueOf);
     }
 
     public String serverHostname() {
@@ -163,6 +166,35 @@ public final class Config {
 
     public int entriesPerPage() {
       return entriesPerPage;
+    }
+  }
+
+  private record EnvironmentReader(String prefix) {
+    private String optional(String key, String fallback) {
+      return optional(key, fallback, v -> v);
+    }
+
+    private <T> T optional(String key, T fallback, Function<String, T> parser) {
+      var fullKey = "%s_%s".formatted(prefix, key);
+      var value = System.getenv(fullKey);
+      if (value == null || value.isBlank()) {
+        return fallback;
+      }
+
+      return parser.apply(value);
+    }
+
+    private String required(String key) {
+      return required(key, v -> v);
+    }
+
+    private <T> T required(String key, Function<String, T> parser) {
+      var value = optional(key, null);
+      if (value == null || value.isBlank()) {
+        throw new RuntimeException("Env property is missing: " + key);
+      }
+
+      return parser.apply(value);
     }
   }
 }
