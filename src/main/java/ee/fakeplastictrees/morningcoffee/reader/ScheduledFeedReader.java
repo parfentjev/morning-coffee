@@ -113,7 +113,7 @@ public class ScheduledFeedReader implements Closeable {
       if (config.maxEntriesPerFetch() >= entries.size()) {
         repository.saveFeedEntries(entries);
       } else {
-        logger.info(
+        logger.debug(
             "{} returned {} entries, saving only the latest {}",
             feed.url(),
             entries.size(),
