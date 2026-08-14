@@ -19,5 +19,3 @@ CREATE TABLE public.entries
     CONSTRAINT entries_feed_id_fkey FOREIGN KEY (feed_id) REFERENCES public.feeds (id),
     CONSTRAINT entries_external_id_feed_id_key UNIQUE (external_id, feed_id)
 );
-
-CREATE INDEX entries_published_at_idx ON public.entries (published_at DESC);

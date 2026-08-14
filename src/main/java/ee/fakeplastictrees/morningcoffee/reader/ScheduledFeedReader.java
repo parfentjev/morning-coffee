@@ -2,6 +2,7 @@ package ee.fakeplastictrees.morningcoffee.reader;
 
 import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.model.Feed;
+import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import java.io.Closeable;
@@ -38,7 +39,7 @@ public class ScheduledFeedReader implements Closeable {
     this.repository = repository;
 
     this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-    this.fetchFeedExecutor = Executors.newVirtualThreadPerTaskExecutor();
+    this.fetchFeedExecutor = Executors.newFixedThreadPool(config.maxParallelFetches());
 
     this.feedClient =
         new FeedClient(config.requestThrottlingDelaySeconds(), config.blockedNetworks());
@@ -106,8 +107,20 @@ public class ScheduledFeedReader implements Closeable {
       var entries =
           feedParser.parseResponse(response.body()).stream()
               .peek(entry -> entry.setFeedId(feed.id()))
+              .sorted(this::sortByPublishedAtDesc)
               .toList();
-      repository.saveFeedEntries(entries);
+
+      if (config.maxEntriesPerFetch() >= entries.size()) {
+        repository.saveFeedEntries(entries);
+      } else {
+        logger.debug(
+            "{} returned {} entries, saving only the latest {}",
+            feed.url(),
+            entries.size(),
+            config.maxEntriesPerFetch());
+
+        repository.saveFeedEntries(entries.subList(0, config.maxEntriesPerFetch()));
+      }
     } catch (FeedParserException e) {
       if (logger.isDebugEnabled()) {
         var responseData = extractResponseData(response);
@@ -118,6 +131,10 @@ public class ScheduledFeedReader implements Closeable {
     } catch (RepositoryException e) {
       logger.warn("failed to save feed entries: {}", feed.url(), e);
     }
+  }
+
+  private int sortByPublishedAtDesc(FeedEntry a, FeedEntry b) {
+    return b.getPublishedAt().compareTo(a.getPublishedAt());
   }
 
   private Map<String, Object> extractResponseData(HttpResponse<byte[]> response) {

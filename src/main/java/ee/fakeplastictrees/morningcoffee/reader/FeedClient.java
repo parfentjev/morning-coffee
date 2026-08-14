@@ -24,7 +24,8 @@ import org.apache.logging.log4j.Logger;
 class FeedClient {
   private static final Logger logger = LogManager.getLogger();
 
-  private static final int MAX_RESPONSE_BODY_BYTES = 5 * 1024 * 1024;
+  // 1MB, should be more than enough for a regular feed
+  private static final int MAX_RESPONSE_BODY_BYTES = 1 * 1024 * 1024;
   private static final Duration HTTP_CLIENT_TIMEOUT = Duration.ofSeconds(10);
 
   private final HttpClient httpClient;
