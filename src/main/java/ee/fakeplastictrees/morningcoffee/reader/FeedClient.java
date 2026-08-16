@@ -24,8 +24,9 @@ import org.apache.logging.log4j.Logger;
 class FeedClient {
   private static final Logger logger = LogManager.getLogger();
 
-  // 1MB, should be more than enough for a regular feed
+  // 1MB, should be more than enough for a responsible feed
   private static final int MAX_RESPONSE_BODY_BYTES = 1 * 1024 * 1024;
+  // TODO: not enough for archlinux.org 😱 make it configurable on a feed level?
   private static final Duration HTTP_CLIENT_TIMEOUT = Duration.ofSeconds(10);
 
   private final HttpClient httpClient;
@@ -61,6 +62,10 @@ class FeedClient {
       if (response.statusCode() != HttpURLConnection.HTTP_OK) {
         var statusCode = response.statusCode();
         var message = "%s returned unexpected status code: %d".formatted(uri, statusCode);
+
+        // TODO: not all status codes are equally interesting—429 could be logged on a debug level;
+        // perhaps add FeedClientUnexopectedStatusCodeException? store statusCode here, let
+        // the caller to decide what log level to use depending on it
         throw new FeedClientException(message);
       }
 
