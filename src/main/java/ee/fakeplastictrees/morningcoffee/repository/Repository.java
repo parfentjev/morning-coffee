@@ -6,6 +6,7 @@ import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntryDto;
 import java.io.Closeable;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,7 @@ public class Repository implements Closeable {
     var feeds = new ArrayList<Feed>();
     var sql =
         """
-        select id, url from feeds where enabled = true
+        select id, url, request_timeout_seconds from feeds where enabled = true
         """;
     try (var connection = connectionPool.getConnection();
         var statement = connection.prepareStatement(sql);
@@ -45,8 +46,9 @@ public class Repository implements Closeable {
       while (result.next()) {
         var id = UUID.fromString(result.getString("id"));
         var url = result.getString("url");
+        var timeout = Duration.ofSeconds(result.getInt("request_timeout_seconds"));
 
-        feeds.add(new Feed(id, url));
+        feeds.add(new Feed(id, url, timeout));
       }
     } catch (SQLException e) {
       throw new RepositoryException("failed to select feeds", e);
