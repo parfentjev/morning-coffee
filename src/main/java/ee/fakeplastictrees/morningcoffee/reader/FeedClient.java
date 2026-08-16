@@ -26,8 +26,6 @@ class FeedClient {
 
   // 1MB, should be more than enough for a responsible feed
   private static final int MAX_RESPONSE_BODY_BYTES = 1 * 1024 * 1024;
-  // TODO: not enough for archlinux.org 😱 make it configurable on a feed level?
-  private static final Duration HTTP_CLIENT_TIMEOUT = Duration.ofSeconds(10);
 
   private final HttpClient httpClient;
   private final ConcurrentHashMap<String, ThrottlingManager<HttpResponse<byte[]>>>
@@ -39,7 +37,7 @@ class FeedClient {
   ///
   /// @param throttlingDelay delay in seconds between requests to the same host
   public FeedClient(long throttlingDelay, List<IPAddress> blockedNetworks) {
-    this.httpClient = HttpClient.newBuilder().connectTimeout(HTTP_CLIENT_TIMEOUT).build();
+    this.httpClient = HttpClient.newBuilder().build();
     this.throttlingManagers = new ConcurrentHashMap<>();
     this.throttlingDelay = Duration.ofSeconds(throttlingDelay);
     this.blockedNetworks = blockedNetworks;
@@ -48,25 +46,20 @@ class FeedClient {
   /// Requests the given `url` and returns the raw response body if the server responds with 200 OK.
   ///
   /// @param url address of an RSS/Atom feed
-  /// @throws FeedClientException if the URL is malformed, the request fails, or the server returns
-  ///   an unexpected status code
+  /// @param timeout timeout for the HTTP request
+  /// @throws FeedClientException if the URL is malformed or the request fails
+  /// @throws FeedClientStatusCodeException if the server returns an unexpected status code
   /// @throws InterruptedException if the thread is interrupted
-  public HttpResponse<byte[]> fetchFeed(String url)
-      throws FeedClientException, InterruptedException {
+  public HttpResponse<byte[]> fetchFeed(String url, Duration timeout)
+      throws FeedClientException, FeedClientStatusCodeException, InterruptedException {
     try {
       var uri = new URI(url);
       logger.debug("fetching feed: {}", uri);
 
-      var request = request(uri);
+      var request = request(uri, timeout);
       var response = throttlingManager(uri).execute(() -> httpClient.send(request, bodyHandler()));
       if (response.statusCode() != HttpURLConnection.HTTP_OK) {
-        var statusCode = response.statusCode();
-        var message = "%s returned unexpected status code: %d".formatted(uri, statusCode);
-
-        // TODO: not all status codes are equally interesting—429 could be logged on a debug level;
-        // perhaps add FeedClientUnexopectedStatusCodeException? store statusCode here, let
-        // the caller to decide what log level to use depending on it
-        throw new FeedClientException(message);
+        throw new FeedClientStatusCodeException(response.statusCode());
       }
 
       return response;
@@ -79,7 +72,7 @@ class FeedClient {
     }
   }
 
-  private HttpRequest request(URI uri) throws FeedClientException {
+  private HttpRequest request(URI uri, Duration timeout) throws FeedClientException {
     try {
       var targetAddresses = new HostName(uri.getHost()).toAllAddresses();
       var overlap = findOverlappingNetwork(targetAddresses);
@@ -104,7 +97,7 @@ class FeedClient {
             "application/atom+xml, application/rss+xml, application/xml;q=0.9, text/xml;q=0.8,"
                 + " */*;q=0.1")
         .uri(uri)
-        .timeout(HTTP_CLIENT_TIMEOUT)
+        .timeout(timeout)
         .GET()
         .build();
   }

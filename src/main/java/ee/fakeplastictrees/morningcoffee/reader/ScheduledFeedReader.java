@@ -96,9 +96,12 @@ public class ScheduledFeedReader implements Closeable {
     // fetch
     HttpResponse<byte[]> response;
     try {
-      response = feedClient.fetchFeed(feed.url());
+      response = feedClient.fetchFeed(feed.url(), feed.requestTimeout());
+    } catch (FeedClientStatusCodeException e) {
+      logger.debug("fetch feed unexpected status code: {} {}", feed.url(), e.statusCode());
+      return;
     } catch (FeedClientException e) {
-      logger.warn("failed to fetch feed: {}", feed.url(), e);
+      logger.warn("fetch feed request failed: {}", feed.url(), e);
       return;
     }
 

@@ -1,10 +1,11 @@
-CREATE TABLE public.feeds
+create table public.feeds
 (
-    id      uuid    DEFAULT uuidv7() NOT NULL,
-    name    text                     NOT NULL,
-    url     text                     NOT NULL,
-    enabled boolean DEFAULT TRUE     NOT NULL,
-    CONSTRAINT feeds_pkey PRIMARY KEY (id)
+    id uuid default uuidv7() not null,
+    name text not null,
+    url text not null,
+    enabled boolean default true not null,
+    request_timeout_seconds smallint default 10 not null check(request_timeout_seconds > 0),
+    constraint feeds_pkey primary key (id)
 );
 
 CREATE TABLE public.entries
