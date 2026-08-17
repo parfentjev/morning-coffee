@@ -8,15 +8,15 @@ create table public.feeds
     constraint feeds_pkey primary key (id)
 );
 
-CREATE TABLE public.entries
+create table public.entries
 (
-    id           uuid DEFAULT uuidv7() NOT NULL,
-    external_id  text                  NOT NULL,
-    published_at timestamptz           NOT NULL,
-    feed_id      uuid                  NOT NULL,
-    title        text                  NOT NULL,
-    link         text                  NOT NULL,
-    CONSTRAINT entries_pkey PRIMARY KEY (id),
-    CONSTRAINT entries_feed_id_fkey FOREIGN KEY (feed_id) REFERENCES public.feeds (id),
-    CONSTRAINT entries_external_id_feed_id_key UNIQUE (external_id, feed_id)
+    id uuid default uuidv7() not null,
+    external_id text not null,
+    published_at timestamptz not null,
+    feed_id uuid not null,
+    title text not null,
+    link text not null,
+    constraint entries_pkey primary key (id),
+    constraint entries_feed_id_fkey foreign key (feed_id) references public.feeds (id),
+    constraint entries_external_id_feed_id_key unique (external_id, feed_id)
 );
