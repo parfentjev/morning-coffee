@@ -1,27 +1,46 @@
+:root {
+  color-scheme: light dark;
+}
+
+:root {
+  --color-background: light-dark(#eff1f5, #303446);
+  --color-text: light-dark(#4c4f69, #c6d0f5);
+  --color-anchor: light-dark(#04a5e5, #99d1db);
+  --color-anchor-visited: light-dark(#8839ef, #ca9ee6);
+  --color-selected-entry: light-dark(#df8e1d, #e5c890);
+}
+
 body {
-    background-color: #eff1f5;
-    color: #4c4f69;
-    font-family: Open Sans, Arial;
-    line-height: 1.4;
-    margin: 2em auto;
-    max-width: 1200px;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family:
+    Open Sans,
+    Arial;
+  line-height: 1.4;
+  margin: 2em auto;
+  max-width: 1200px;
 }
 
 footer {
-    text-align: center;
+  text-align: center;
 }
 
 a {
-    color: #04a5e5;
+  color: var(--color-anchor);
 }
 
 a:visited {
-    color: #8839ef;
+  color: var(--color-anchor-visited);
 }
 
 .list-entry span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.selected-entry {
+  color: var(--color-selected-entry);
+  font-weight: bold;
 }
