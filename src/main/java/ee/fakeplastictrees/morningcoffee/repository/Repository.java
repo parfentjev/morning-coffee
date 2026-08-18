@@ -74,11 +74,11 @@ public class Repository implements Closeable {
       try {
         connection.setAutoCommit(false);
         for (var entry : entries) {
-          statement.setString(1, entry.getExternalId());
-          statement.setObject(2, entry.getPublishedAt());
-          statement.setObject(3, entry.getFeedId());
-          statement.setString(4, entry.getTitle());
-          statement.setString(5, entry.getLink());
+          statement.setString(1, entry.externalId());
+          statement.setObject(2, entry.publishedAt());
+          statement.setObject(3, entry.feedId());
+          statement.setString(4, entry.title());
+          statement.setString(5, entry.link());
           statement.addBatch();
         }
 

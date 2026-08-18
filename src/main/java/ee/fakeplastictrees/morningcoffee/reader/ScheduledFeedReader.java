@@ -108,8 +108,7 @@ public class ScheduledFeedReader implements Closeable {
     // process
     try {
       var entries =
-          feedParser.parseResponse(response.body()).stream()
-              .peek(entry -> entry.setFeedId(feed.id()))
+          feedParser.parseResponse(feed.id(), response.body()).stream()
               .sorted(this::sortByPublishedAtDesc)
               .toList();
 
@@ -137,7 +136,7 @@ public class ScheduledFeedReader implements Closeable {
   }
 
   private int sortByPublishedAtDesc(FeedEntry a, FeedEntry b) {
-    return b.getPublishedAt().compareTo(a.getPublishedAt());
+    return b.publishedAt().compareTo(a.publishedAt());
   }
 
   private Map<String, Object> extractResponseData(HttpResponse<byte[]> response) {
