@@ -1,6 +1,6 @@
 package ee.fakeplastictrees.morningcoffee.reader;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.concurrent.Executors;
@@ -23,9 +23,7 @@ public class ThrottlingManagerTest {
     }
 
     var actualDelay = time1.minus(time2).abs();
-    assertTrue(
-        actualDelay.compareTo(expectedDelay) >= 0,
-        () -> "expected at least %s seconds delay, got %s".formatted(expectedDelay, actualDelay));
+    assertThat(actualDelay).isGreaterThanOrEqualTo(expectedDelay);
   }
 
   @Test
@@ -45,8 +43,6 @@ public class ThrottlingManagerTest {
     }
 
     var actualDelay = time1.minus(time2).abs();
-    assertTrue(
-        actualDelay.compareTo(delay) < 0,
-        () -> "expected less than %s seconds delay, got %s".formatted(delay, actualDelay));
+    assertThat(actualDelay).isLessThan(delay);
   }
 }

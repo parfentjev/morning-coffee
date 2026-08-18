@@ -7,9 +7,8 @@ import java.nio.charset.StandardCharsets;
 /// @param contentType resource media type
 /// @param contents resource bytes
 public record Resource(String contentType, byte[] contents) {
-  public Resource(String contentType, byte[] contents) {
-    this.contentType = contentType;
-    this.contents = contents.clone();
+  public Resource {
+    contents = contents.clone();
   }
 
   @Override
