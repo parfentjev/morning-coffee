@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndEntryImpl;
+import java.io.Serial;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -141,6 +142,8 @@ public class FeedEntryMapperTest {
   // are overridden too to ensure that the test data isn't altered in any way by an external
   // library (ROME).
   private static final class SyndEntryFixture extends SyndEntryImpl {
+    @Serial private static final long serialVersionUID = 1L;
+
     private String link;
     private String title;
     private String uri;
