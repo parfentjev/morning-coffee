@@ -3,7 +3,6 @@ package ee.fakeplastictrees.morningcoffee.reader;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 class ThrottlingManager<T> {
   private final Duration delay;
@@ -46,7 +45,7 @@ class ThrottlingManager<T> {
   private void awaitDelay() throws InterruptedException {
     var remainingTime = nextRequestNanoTime - System.nanoTime();
     if (remainingTime > 0) {
-      TimeUnit.NANOSECONDS.sleep(remainingTime);
+      Thread.sleep(Duration.ofNanos(remainingTime));
     }
   }
 }

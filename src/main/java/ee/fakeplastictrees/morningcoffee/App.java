@@ -23,9 +23,9 @@ public class App implements Closeable {
   static void main() {
     try {
       var app = new App();
+      Runtime.getRuntime().addShutdownHook(new Thread(app::close));
       app.start();
 
-      Runtime.getRuntime().addShutdownHook(new Thread(app::close));
     } catch (Exception e) {
       logger.error("unhandled exception", e);
       System.exit(1);
@@ -42,17 +42,17 @@ public class App implements Closeable {
     reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();
 
-    var templateService = TemplateService.init();
-    var staticResourceService = StaticResourceService.init();
+    var templates = TemplateService.init();
+    var resources = StaticResourceService.init();
 
-    server = new WebServer(config.webServer(), repository, templateService, staticResourceService);
+    server = new WebServer(config.webServer(), repository, templates, resources);
     server.start();
   }
 
   @Override
   public void close() {
-    ofNullable(reader).ifPresent(ScheduledFeedReader::close);
     ofNullable(server).ifPresent(WebServer::close);
+    ofNullable(reader).ifPresent(ScheduledFeedReader::close);
     ofNullable(repository).ifPresent(Repository::close);
   }
 }
