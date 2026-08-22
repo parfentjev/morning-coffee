@@ -3,6 +3,7 @@ package ee.fakeplastictrees.morningcoffee.webserver.render;
 import ee.fakeplastictrees.morningcoffee.util.Resource;
 import ee.fakeplastictrees.morningcoffee.util.ResourceManager;
 import ee.fakeplastictrees.morningcoffee.util.ResourceManagerException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -19,14 +20,13 @@ public class StaticResourceService {
   /// @return initialized static resource service
   /// @throws ResourceManagerException if a static resource cannot be loaded
   public static StaticResourceService init() throws ResourceManagerException {
-    return new StaticResourceService(
-        Map.of(
-            "main.css",
-            ResourceManager.loadResource("static/%s".formatted("main.css")),
-            "main.js",
-            ResourceManager.loadResource("static/%s".formatted("main.js")),
+    var resources =
+        loadResources(
             "favicon.png",
-            ResourceManager.loadResource("static/%s".formatted("favicon.png"))));
+            "e73de0c273d6297f0654c096066dedf3e4b1261dfcf3c6ac4c44236d932bf9c4.css",
+            "741763f8277c65485b2779875913fecf00bb694935532e0f01886d4800c8e1c3.js");
+
+    return new StaticResourceService(resources);
   }
 
   /// Finds a static resource by its path relative to the static-resource directory.
@@ -35,5 +35,16 @@ public class StaticResourceService {
   /// @return matching resource, or an empty optional if the path is not configured
   public Optional<Resource> getResource(String relativePath) {
     return Optional.ofNullable(resources.get(relativePath));
+  }
+
+  private static HashMap<String, Resource> loadResources(String... filenames)
+      throws ResourceManagerException {
+    var resources = new HashMap<String, Resource>();
+    for (var filename : filenames) {
+      var resource = ResourceManager.loadResource("static/%s".formatted("favicon.png"));
+      resources.put(filename, resource);
+    }
+
+    return resources;
   }
 }
