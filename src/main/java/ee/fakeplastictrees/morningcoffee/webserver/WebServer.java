@@ -22,8 +22,8 @@ public class WebServer implements Closeable {
 
   private final Config.WebServer config;
   private final Repository repository;
-  private final TemplateService templateService;
-  private final StaticResourceService staticResourceService;
+  private final TemplateService templates;
+  private final StaticResourceService resources;
   private final ExecutorService requestExecutor;
 
   private HttpServer server;
@@ -32,17 +32,17 @@ public class WebServer implements Closeable {
   ///
   /// @param config web server configuration
   /// @param repository feed repository
-  /// @param templateService service that manages dynamic HTML templates
-  /// @param staticResourceService service that manages static resources
+  /// @param resources service that manages dynamic HTML templates
+  /// @param templates service that manages static resources
   public WebServer(
       Config.WebServer config,
       Repository repository,
-      TemplateService templateService,
-      StaticResourceService staticResourceService) {
+      TemplateService resources,
+      StaticResourceService templates) {
     this.config = config;
     this.repository = repository;
-    this.templateService = templateService;
-    this.staticResourceService = staticResourceService;
+    this.templates = resources;
+    this.resources = templates;
     this.requestExecutor = Executors.newVirtualThreadPerTaskExecutor();
   }
 
@@ -51,8 +51,7 @@ public class WebServer implements Closeable {
   /// @throws WebServerException if the HTTP server cannot be created
   public void start() throws WebServerException {
     server = createHttpServer(config.serverHostname(), config.serverPort());
-    HandlerManager.registerHandlers(
-        config, repository, server, templateService, staticResourceService);
+    HandlerManager.registerHandlers(config, repository, server, templates, resources);
     server.setExecutor(requestExecutor);
     server.start();
 

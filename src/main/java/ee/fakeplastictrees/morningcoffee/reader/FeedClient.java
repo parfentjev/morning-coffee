@@ -3,6 +3,7 @@ package ee.fakeplastictrees.morningcoffee.reader;
 import inet.ipaddr.HostName;
 import inet.ipaddr.HostNameException;
 import inet.ipaddr.IPAddress;
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-class FeedClient {
+class FeedClient implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
   // 1MB, should be more than enough for a responsible feed
@@ -125,5 +126,10 @@ class FeedClient {
     }
 
     return Optional.empty();
+  }
+
+  @Override
+  public void close() {
+    httpClient.close();
   }
 }
