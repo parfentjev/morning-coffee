@@ -41,7 +41,7 @@ public class StaticResourceService {
       throws ResourceManagerException {
     var resources = new HashMap<String, Resource>();
     for (var filename : filenames) {
-      var resource = ResourceManager.loadResource("static/%s".formatted("favicon.png"));
+      var resource = ResourceManager.loadResource("static/%s".formatted(filename));
       resources.put(filename, resource);
     }
 
