@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-java@v5.7.0
         with:
           distribution: "temurin"
-          java-version: 25
+          java-version: 26
       - name: Run lint plugins
         run: make lint
       - name: Run unit tests
