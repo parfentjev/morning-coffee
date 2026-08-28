@@ -1,6 +1,13 @@
 <li class="list-entry">
   <span class="list-entry-text">
-    <span class="list-entry-date">{{trusted|entry.date}}</span>
-    <a href="{{attribute|entry.link}}" target="_blank" rel="noopener">{{content|entry.title}}</a> <span class="list-entry-feed">{{content|feed.name}}</span>
+    <span class="list-entry-date" title="{{attribute|entry.date.full}}">{{trusted|entry.date.short}}</span>
+    <a
+      href="{{attribute|entry.link}}"
+      target="_blank"
+      rel="noopener"
+      title="{{attribute|feed.name}}: {{attribute|entry.title}}"
+      >{{content|entry.title}}</a
+    >
+    <span class="list-entry-feed">{{content|feed.name}}</span>
   </span>
 </li>

@@ -9,12 +9,14 @@ import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateData;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateException;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.net.HttpURLConnection;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 /// Serves the page containing recent feed entries.
 class IndexHandler extends AbstractHttpHandler {
-  private static final DateTimeFormatter TIME_FORMATTER =
-      DateTimeFormatter.ofPattern("MMM dd HH:mm");
+  private static final DateTimeFormatter DATE_FULL = DateTimeFormatter.ISO_INSTANT;
+  private static final DateTimeFormatter DATE_SHORT =
+      DateTimeFormatter.ofPattern("MMM dd HH:mm").withZone(ZoneOffset.UTC);
 
   private final Config.WebServer config;
   private final TemplateService templateService;
@@ -62,14 +64,14 @@ class IndexHandler extends AbstractHttpHandler {
 
   private void buildEntry(StringBuilder output, FeedEntryDto entry) throws TemplateException {
     var template = templateService.getFeedEntryTemplate();
-    var publishedAt = entry.publishedAt().format(TIME_FORMATTER);
 
-    var entryDate = new TemplateData("entry.date", publishedAt);
+    var dateFull = new TemplateData("entry.date.full", entry.publishedAt().format(DATE_FULL));
+    var dateShort = new TemplateData("entry.date.short", entry.publishedAt().format(DATE_SHORT));
     var feedName = new TemplateData("feed.name", entry.feedName());
     var entryLink = new TemplateData("entry.link", entry.link());
     var entryTitle = new TemplateData("entry.title", entry.title());
 
-    var entryHtml = template.toHtml(entryDate, feedName, entryLink, entryTitle);
+    var entryHtml = template.toHtml(dateFull, dateShort, feedName, entryLink, entryTitle);
     output.append(entryHtml);
   }
 }
