@@ -22,6 +22,6 @@ I used [thebestmotherfucking.website](https://thebestmotherfucking.website/) and
 
 ## Technical stack
 
-- Java 25
+- Java 26
 - Maven 3
 - PostgreSQL 18

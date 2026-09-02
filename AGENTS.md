@@ -13,7 +13,7 @@
 
 Morning Coffee is a small Java RSS/Atom reader. It polls configured feeds, stores entries, and serves a plain HTML page containing recent entries.
 
-- Java: 25
+- Java: 26
 - Build: Maven
 - Entry point: `ee.fakeplastictrees.morningcoffee.App`
 - Source root: `src/main/java`
