@@ -68,7 +68,7 @@ class FeedClient implements Closeable {
       var message = "failed to parse feed url: %s".formatted(url);
       throw new FeedClientException(message, e);
     } catch (IOException e) {
-      var message = "failed to execute http request: %s".formatted(url);
+      var message = "failed to execute http request: %s".formatted(e.getMessage());
       throw new FeedClientException(message, e);
     }
   }
