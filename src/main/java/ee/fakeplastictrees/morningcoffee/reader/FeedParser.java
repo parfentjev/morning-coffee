@@ -5,6 +5,7 @@ import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ class FeedParser {
   private static final Logger logger = LogManager.getLogger();
 
   public List<FeedEntry> parseResponse(UUID feedId, byte[] response) throws FeedParserException {
-    try (var reader = new XmlReader(new ByteArrayInputStream(response))) {
+    try (var reader = new BufferedReader(new XmlReader(new ByteArrayInputStream(response)))) {
       var feed = new SyndFeedInput().build(reader);
       if (feed.getEntries() == null || feed.getEntries().isEmpty()) {
         return List.of();
@@ -44,7 +45,6 @@ class FeedParser {
         output.add(mappedEntry);
       } catch (IllegalArgumentException e) {
         logger.info("failed to map feed entry, skipping", e);
-        continue;
       }
     }
 
