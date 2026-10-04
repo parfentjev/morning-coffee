@@ -8,10 +8,7 @@ import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import java.io.Closeable;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -50,12 +47,11 @@ public class ScheduledFeedReader implements Closeable {
   public void start() {
     var interval = config.pollIntervalSeconds();
     var timeUnit = TimeUnit.SECONDS;
+
     scheduledExecutor.scheduleWithFixedDelay(
         () -> {
           try {
             fetchFeeds();
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
           } catch (RuntimeException e) {
             logger.error("unhandled reader runtime exception", e);
           }
@@ -67,28 +63,28 @@ public class ScheduledFeedReader implements Closeable {
     logger.info("scheduled feed reader to run every {} {}", interval, timeUnit.name());
   }
 
-  private void fetchFeeds() throws InterruptedException {
-    var tasks = new ArrayList<Callable<Void>>();
+  private void fetchFeeds() {
     try {
       for (var feed : repository.getFeeds()) {
-        tasks.add(
+        // dispatch a task, but don't block the thread
+        // so fetchFeeds finishes as soon as tasks for each feed are created
+        // thus scheduling the next run as soon as possible
+        //
+        // previously I used blocking invocations, but with I/O operations and
+        // throttling it meant that the actual polling itnerval grew needlessly
+        fetchFeedExecutor.submit(
             () -> {
-              processFeed(feed);
-
-              return null;
+              try {
+                processFeed(feed);
+              } catch (InterruptedException _) {
+                Thread.interrupted();
+              } catch (RuntimeException e) {
+                logger.error("unhandled process feed exception", e);
+              }
             });
       }
     } catch (RepositoryException e) {
       logger.warn("failed to get feeds", e);
-      return;
-    }
-
-    for (var future : fetchFeedExecutor.invokeAll(tasks)) {
-      try {
-        future.get();
-      } catch (ExecutionException e) {
-        logger.error("unhandled fetch feed execution exception", e);
-      }
     }
   }
 

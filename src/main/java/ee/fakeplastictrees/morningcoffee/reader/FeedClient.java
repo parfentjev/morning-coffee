@@ -58,6 +58,9 @@ class FeedClient implements Closeable {
       logger.debug("fetching feed: {}", uri);
 
       var request = request(uri, timeout);
+      // TODO: the whole thread is blocked when a request is throttled, need to fix that
+      // perhaps by coordinating with ThrottlingManager in ScheduledFeedReader
+      // so that throttled feeds don't even reach this point
       var response = throttlingManager(uri).execute(() -> httpClient.send(request, bodyHandler()));
       if (response.statusCode() != HttpURLConnection.HTTP_OK) {
         throw new FeedClientStatusCodeException(response.statusCode());
