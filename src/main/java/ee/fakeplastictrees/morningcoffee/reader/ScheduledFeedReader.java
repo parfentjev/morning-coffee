@@ -162,7 +162,7 @@ public class ScheduledFeedReader implements Closeable {
 
   @Override
   public void close() {
-    try {
+    try (feedClient) {
       logger.info("shutting down");
 
       scheduledExecutor.shutdownNow();
@@ -175,8 +175,6 @@ public class ScheduledFeedReader implements Closeable {
       if (fetchFeedExecutor.awaitTermination(5, TimeUnit.SECONDS) == false) {
         logger.warn("failed to stop fetchFeedExecutor in time");
       }
-
-      feedClient.close();
     } catch (InterruptedException e) {
       logger.warn("interrupted while awaiting termination", e);
       Thread.currentThread().interrupt();

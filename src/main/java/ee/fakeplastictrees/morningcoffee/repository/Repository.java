@@ -137,6 +137,7 @@ public class Repository implements Closeable {
   }
 
   @Override
+  @SuppressWarnings("ConvertToTryWithResources")
   public void close() {
     logger.info("shutting down");
     connectionPool.close();
