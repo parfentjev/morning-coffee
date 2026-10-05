@@ -72,14 +72,14 @@ public class ScheduledFeedReader implements Closeable {
         //
         // previously I used blocking invocations, but with I/O operations and
         // throttling it meant that the actual polling itnerval grew needlessly
-        fetchFeedExecutor.submit(
+        fetchFeedExecutor.execute(
             () -> {
               try {
                 processFeed(feed);
               } catch (InterruptedException _) {
-                Thread.interrupted();
+                Thread.currentThread().interrupt();
               } catch (RuntimeException e) {
-                logger.error("unhandled process feed exception", e);
+                logger.error("unhandled process feed exception: {} {}", feed.id(), feed.url(), e);
               }
             });
       }
