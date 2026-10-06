@@ -8,6 +8,7 @@ import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import java.io.Closeable;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,7 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /// Polls configured feeds and persists new entries on a fixed schedule.
-public class ScheduledFeedReader implements Closeable {
+public final class ScheduledFeedReader implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
   private final Config.Reader config;
@@ -31,7 +32,10 @@ public class ScheduledFeedReader implements Closeable {
   ///
   /// @param config feed reader configuration
   /// @param repository feed repository
-  public ScheduledFeedReader(Config.Reader config, Repository repository) {
+  public ScheduledFeedReader(Config.Reader config, Repository repository)
+      throws IllegalArgumentException {
+    assertConfigValid(config);
+
     this.config = config;
     this.repository = repository;
 
@@ -61,6 +65,42 @@ public class ScheduledFeedReader implements Closeable {
         timeUnit);
 
     logger.info("scheduled feed reader to run every {} {}", interval, timeUnit.name());
+  }
+
+  private void assertConfigValid(Config.Reader config) throws IllegalArgumentException {
+    if (config.pollIntervalSeconds() < 1) {
+      throw new IllegalArgumentException("polling interval must be >= 1");
+    }
+
+    try {
+      Duration.ofSeconds(config.pollIntervalSeconds()).toNanos();
+    } catch (ArithmeticException e) {
+      throw new IllegalArgumentException("poll interval overflows long", e);
+    }
+
+    if (config.requestThrottlingDelaySeconds() < 0) {
+      throw new IllegalArgumentException("throttling delay must be >= 0");
+    }
+
+    try {
+      Duration.ofSeconds(config.requestThrottlingDelaySeconds()).toNanos();
+    } catch (ArithmeticException e) {
+      throw new IllegalArgumentException("throttling delay overflows long", e);
+    }
+
+    // wouldn't it be nice?
+    // https://openjdk.org/jeps/8303099
+    if (config.blockedNetworks() == null) {
+      throw new IllegalArgumentException("blocked networks list cannot be null");
+    }
+
+    if (config.maxParallelFetches() < 1) {
+      throw new IllegalArgumentException("max parallel fetches must be >= 1");
+    }
+
+    if (config.maxEntriesPerFetch() < 1) {
+      throw new IllegalArgumentException("max entries per fetch must be >= 1");
+    }
   }
 
   private void fetchFeeds() {
