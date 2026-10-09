@@ -24,8 +24,8 @@ import org.apache.logging.log4j.Logger;
 class FeedClient implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
-  // 1MB, should be more than enough for a responsible feed
-  private static final int MAX_RESPONSE_BODY_BYTES = 1 * 1024 * 1024;
+  // 5MB, should be more than enough even for an irresponsible feed
+  private static final int MAX_RESPONSE_BODY_BYTES = 5 * 1024 * 1024;
 
   private final HttpClient httpClient;
   private final ConcurrentHashMap<String, ThrottlingManager<HttpResponse<byte[]>>>
