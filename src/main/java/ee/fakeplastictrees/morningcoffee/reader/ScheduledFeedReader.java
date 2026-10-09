@@ -6,9 +6,13 @@ import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import java.io.Closeable;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,8 +46,8 @@ public final class ScheduledFeedReader implements Closeable {
     this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
     this.fetchFeedExecutor = Executors.newFixedThreadPool(config.maxParallelFetches());
 
-    this.feedClient =
-        new FeedClient(config.requestThrottlingDelaySeconds(), config.blockedNetworks());
+    var throttlingDelay = Duration.ofSeconds(config.requestThrottlingDelaySeconds());
+    this.feedClient = new FeedClient(throttlingDelay, config.blockedNetworks());
     this.feedParser = new FeedParser();
   }
 
@@ -104,47 +108,53 @@ public final class ScheduledFeedReader implements Closeable {
   }
 
   private void fetchFeeds() {
+    List<Feed> feeds;
     try {
-      for (var feed : repository.getFeeds()) {
-        // dispatch a task, but don't block the thread
-        // so fetchFeeds finishes as soon as tasks for each feed are created
-        // thus scheduling the next run as soon as possible
-        //
-        // previously I used blocking invocations, but with I/O operations and
-        // throttling it meant that the actual polling itnerval grew needlessly
-        fetchFeedExecutor.execute(
-            () -> {
-              try {
-                processFeed(feed);
-              } catch (InterruptedException _) {
-                Thread.currentThread().interrupt();
-              } catch (RuntimeException e) {
-                logger.error("unhandled process feed exception: {} {}", feed.id(), feed.url(), e);
-              }
-            });
-      }
+      feeds = repository.getFeeds();
     } catch (RepositoryException e) {
       logger.warn("failed to get feeds", e);
+      return;
+    }
+
+    for (var feed : feeds) {
+      ProcessableFeed processableFeed;
+      try {
+        processableFeed = new ProcessableFeed(feed);
+      } catch (URISyntaxException e) {
+        logger.error("failed to parse feed url: {}", feed.url());
+        continue;
+      }
+
+      fetchFeedExecutor.execute(
+          () -> {
+            try {
+              processFeed(processableFeed);
+            } catch (InterruptedException _) {
+              Thread.currentThread().interrupt();
+            } catch (RuntimeException e) {
+              logger.error("unhandled process feed exception: {} {}", feed.id(), feed.url(), e);
+            }
+          });
     }
   }
 
-  private void processFeed(Feed feed) throws InterruptedException {
+  private void processFeed(ProcessableFeed feed) throws InterruptedException {
     // fetch
     HttpResponse<byte[]> response;
     try {
-      response = feedClient.fetchFeed(feed.url(), feed.requestTimeout());
+      response = feedClient.fetchFeed(feed.uri(), feed.entity().requestTimeout());
     } catch (FeedClientStatusCodeException e) {
-      logger.debug("fetch feed unexpected status code: {} {}", feed.url(), e.statusCode());
+      logger.debug("fetch feed unexpected status code: {} {}", feed.uri(), e.statusCode());
       return;
     } catch (FeedClientException e) {
-      logger.warn("fetch feed request failed: {}", feed.url(), e);
+      logger.warn("fetch feed request failed: {}", feed.uri(), e);
       return;
     }
 
     // process
     try {
       var entries =
-          feedParser.parseResponse(feed.id(), response.body()).stream()
+          feedParser.parseResponse(feed.entity().id(), response.body()).stream()
               .sorted(this::sortByPublishedAtDesc)
               .toList();
 
@@ -153,7 +163,7 @@ public final class ScheduledFeedReader implements Closeable {
       } else {
         logger.debug(
             "{} returned {} entries, saving only the latest {}",
-            feed.url(),
+            feed.uri(),
             entries.size(),
             config.maxEntriesPerFetch());
 
@@ -162,12 +172,12 @@ public final class ScheduledFeedReader implements Closeable {
     } catch (FeedParserException e) {
       if (logger.isDebugEnabled()) {
         var responseData = extractResponseData(response);
-        logger.debug("response data for {}: {}", feed.url(), responseData);
+        logger.debug("response data for {}: {}", feed.uri(), responseData);
       }
 
-      logger.warn("failed to parse feed: {}", feed.url(), e);
+      logger.warn("failed to parse feed: {}", feed.uri(), e);
     } catch (RepositoryException e) {
-      logger.warn("failed to save feed entries: {}", feed.url(), e);
+      logger.warn("failed to save feed entries: {}", feed.uri(), e);
     }
   }
 
@@ -214,6 +224,14 @@ public final class ScheduledFeedReader implements Closeable {
     } catch (InterruptedException e) {
       logger.warn("interrupted while awaiting termination", e);
       Thread.currentThread().interrupt();
+    }
+  }
+
+  private record ProcessableFeed(Feed entity, URI uri, String hostname) {
+    ProcessableFeed(Feed entity) throws URISyntaxException {
+      var uri = new URI(entity.url());
+      var hostname = uri.getHost().toLowerCase(Locale.ROOT);
+      this(entity, uri, hostname);
     }
   }
 }

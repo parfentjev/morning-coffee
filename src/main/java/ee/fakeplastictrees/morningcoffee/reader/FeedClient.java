@@ -7,7 +7,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -34,27 +33,30 @@ class FeedClient implements Closeable {
   private final Duration throttlingDelay;
   private final List<IPAddress> blockedNetworks;
 
-  /// Creates a new instance of FeedClient.
+  /// Creates a feed client with per-host throttling and blocked-network checks.
   ///
-  /// @param throttlingDelay delay in seconds between requests to the same host
-  public FeedClient(long throttlingDelay, List<IPAddress> blockedNetworks) {
+  /// @param throttlingDelay delay between completion of an HTTP attempt and the next attempt to the
+  ///   same host
+  /// @param blockedNetworks networks that feed hosts must not resolve to
+  public FeedClient(Duration throttlingDelay, List<IPAddress> blockedNetworks) {
     this.httpClient = HttpClient.newBuilder().build();
     this.throttlingManagers = new ConcurrentHashMap<>();
-    this.throttlingDelay = Duration.ofSeconds(throttlingDelay);
+    this.throttlingDelay = throttlingDelay;
     this.blockedNetworks = blockedNetworks;
   }
 
-  /// Requests the given `url` and returns the raw response body if the server responds with 200 OK.
+  /// Fetches the prepared feed URI and returns its response if the server responds with 200 OK.
   ///
-  /// @param url address of an RSS/Atom feed
+  /// @param uri prepared URI of an RSS/Atom feed
   /// @param timeout timeout for the HTTP request
-  /// @throws FeedClientException if the URL is malformed or the request fails
-  /// @throws FeedClientStatusCodeException if the server returns an unexpected status code
+  /// @return HTTP response containing the raw response body as bytes
+  /// @throws FeedClientException if host resolution fails, a target address is blocked, or HTTP I/O
+  ///   fails
+  /// @throws FeedClientStatusCodeException if the server responds with a status other than 200 OK
   /// @throws InterruptedException if the thread is interrupted
-  public HttpResponse<byte[]> fetchFeed(String url, Duration timeout)
+  public HttpResponse<byte[]> fetchFeed(URI uri, Duration timeout)
       throws FeedClientException, FeedClientStatusCodeException, InterruptedException {
     try {
-      var uri = new URI(url);
       logger.debug("fetching feed: {}", uri);
 
       var request = request(uri, timeout);
@@ -67,9 +69,6 @@ class FeedClient implements Closeable {
       }
 
       return response;
-    } catch (URISyntaxException e) {
-      var message = "failed to parse feed url: %s".formatted(url);
-      throw new FeedClientException(message, e);
     } catch (IOException e) {
       var message = "failed to execute http request: %s".formatted(e.getMessage());
       throw new FeedClientException(message, e);
