@@ -321,10 +321,12 @@ final class FeedCoordinator {
     private long generation;
 
     void cancel() {
-      ++generation;
-      if (future != null) {
-        future.cancel(false);
-        future = null;
+      synchronized (lock) {
+        ++generation;
+        if (future != null) {
+          future.cancel(false);
+          future = null;
+        }
       }
     }
 

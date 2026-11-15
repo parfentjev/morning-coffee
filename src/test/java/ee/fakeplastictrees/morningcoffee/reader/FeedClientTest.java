@@ -42,7 +42,7 @@ class FeedClientTest {
   }
 
   @Test
-  void errorResponseStillCountsAsACompletedAttempt() throws Exception {
+  void errorResponseStillCountsAsOneCompletedAttempt() throws Exception {
     var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     server.createContext(
         "/",

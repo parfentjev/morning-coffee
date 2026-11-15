@@ -59,7 +59,7 @@ class FeedCoordinatorTest {
   }
 
   @Test
-  void zeroCooldownStillAllowsOnlyOneRequestPerHostAtATime() {
+  void zeroCooldownStillAllowsOnlyOneConcurrentRequestPerHost() {
     try (var f = new Fixture(0, 5)) {
       f.add("a.example");
       f.add("a.example");
