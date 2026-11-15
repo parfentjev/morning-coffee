@@ -6,109 +6,162 @@ import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import java.io.Closeable;
+import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /// Polls configured feeds and persists new entries on a fixed schedule.
-public class ScheduledFeedReader implements Closeable {
+public final class ScheduledFeedReader implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
   private final Config.Reader config;
-  private final ScheduledExecutorService scheduledExecutor;
+  private final ScheduledThreadPoolExecutor scheduledExecutor;
   private final ExecutorService fetchFeedExecutor;
   private final Repository repository;
   private final FeedClient feedClient;
   private final FeedParser feedParser;
 
+  private final FeedCoordinator coordinator;
+
   /// Creates a scheduled feed reader.
   ///
   /// @param config feed reader configuration
   /// @param repository feed repository
-  public ScheduledFeedReader(Config.Reader config, Repository repository) {
+  public ScheduledFeedReader(Config.Reader config, Repository repository)
+      throws IllegalArgumentException {
+    this(config, repository, null);
+  }
+
+  // Injected workers must execute asynchronously and must never run submissions inline.
+  ScheduledFeedReader(Config.Reader config, Repository repository, ExecutorService workers) {
+    assertConfigValid(config);
+
     this.config = config;
     this.repository = repository;
 
-    this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-    this.fetchFeedExecutor = Executors.newFixedThreadPool(config.maxParallelFetches());
+    this.scheduledExecutor = new ScheduledThreadPoolExecutor(1);
+    this.scheduledExecutor.setRemoveOnCancelPolicy(true);
+    this.scheduledExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+    this.scheduledExecutor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
 
-    this.feedClient =
-        new FeedClient(config.requestThrottlingDelaySeconds(), config.blockedNetworks());
+    this.fetchFeedExecutor =
+        workers == null ? Executors.newVirtualThreadPerTaskExecutor() : workers;
+
+    this.feedClient = new FeedClient(config.blockedNetworks());
     this.feedParser = new FeedParser();
+
+    this.coordinator =
+        new FeedCoordinator(
+            config.pollIntervalSeconds(),
+            Duration.ofSeconds(config.requestThrottlingDelaySeconds()).toNanos(),
+            config.maxParallelFetches(),
+            scheduledExecutor,
+            fetchFeedExecutor,
+            this::loadSnapshot,
+            this::processFeed,
+            System::nanoTime);
   }
 
   /// Starts scheduled feed polling.
   public void start() {
-    var interval = config.pollIntervalSeconds();
-    var timeUnit = TimeUnit.SECONDS;
-    scheduledExecutor.scheduleWithFixedDelay(
-        () -> {
-          try {
-            fetchFeeds();
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          } catch (RuntimeException e) {
-            logger.error("unhandled reader runtime exception", e);
-          }
-        },
-        0,
-        interval,
-        timeUnit);
-
-    logger.info("scheduled feed reader to run every {} {}", interval, timeUnit.name());
+    coordinator.start();
   }
 
-  private void fetchFeeds() throws InterruptedException {
-    var tasks = new ArrayList<Callable<Void>>();
-    try {
-      for (var feed : repository.getFeeds()) {
-        tasks.add(
-            () -> {
-              processFeed(feed);
+  private void assertConfigValid(Config.Reader config) throws IllegalArgumentException {
+    if (config.pollIntervalSeconds() < 1) {
+      throw new IllegalArgumentException("polling interval must be >= 1");
+    }
 
-              return null;
-            });
-      }
+    try {
+      Duration.ofSeconds(config.pollIntervalSeconds()).toNanos();
+    } catch (ArithmeticException e) {
+      throw new IllegalArgumentException("poll interval overflows long", e);
+    }
+
+    if (config.requestThrottlingDelaySeconds() < 0) {
+      throw new IllegalArgumentException("throttling delay must be >= 0");
+    }
+
+    try {
+      Duration.ofSeconds(config.requestThrottlingDelaySeconds()).toNanos();
+    } catch (ArithmeticException e) {
+      throw new IllegalArgumentException("throttling delay overflows long", e);
+    }
+
+    // wouldn't it be nice?
+    // https://openjdk.org/jeps/8303099
+    if (config.blockedNetworks() == null) {
+      throw new IllegalArgumentException("blocked networks list cannot be null");
+    }
+
+    if (config.maxParallelFetches() < 1) {
+      throw new IllegalArgumentException("max parallel fetches must be >= 1");
+    }
+
+    if (config.maxEntriesPerFetch() < 1) {
+      throw new IllegalArgumentException("max entries per fetch must be >= 1");
+    }
+  }
+
+  private Optional<List<FeedCoordinator.ProcessableFeed>> loadSnapshot() {
+    List<Feed> feeds;
+    try {
+      feeds = repository.getFeeds();
     } catch (RepositoryException e) {
       logger.warn("failed to get feeds", e);
-      return;
+      return Optional.empty();
     }
 
-    for (var future : fetchFeedExecutor.invokeAll(tasks)) {
+    var snapshot = new LinkedHashMap<UUID, FeedCoordinator.ProcessableFeed>();
+    for (var feed : feeds) {
       try {
-        future.get();
-      } catch (ExecutionException e) {
-        logger.error("unhandled fetch feed execution exception", e);
+        snapshot.put(feed.id(), new FeedCoordinator.ProcessableFeed(feed));
+      } catch (URISyntaxException e) {
+        logger.error("failed to parse feed url: {}", feed.url());
       }
     }
+
+    return Optional.of(List.copyOf(snapshot.values()));
   }
 
-  private void processFeed(Feed feed) throws InterruptedException {
+  private void processFeed(FeedCoordinator.Admission task) {
+    var feed = task.processableFeed();
     // fetch
     HttpResponse<byte[]> response;
     try {
-      response = feedClient.fetchFeed(feed.url(), feed.requestTimeout());
+      response =
+          feedClient.fetchFeed(
+              feed.uri(), feed.entity().requestTimeout(), task::httpAttemptFinished);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+
+      return;
     } catch (FeedClientStatusCodeException e) {
-      logger.debug("fetch feed unexpected status code: {} {}", feed.url(), e.statusCode());
+      logger.debug("fetch feed unexpected status code: {} {}", feed.uri(), e.statusCode());
+
       return;
     } catch (FeedClientException e) {
-      logger.warn("fetch feed request failed: {}", feed.url(), e);
+      logger.warn("fetch feed request failed: {}", feed.uri(), e);
+
       return;
     }
 
     // process
     try {
       var entries =
-          feedParser.parseResponse(feed.id(), response.body()).stream()
+          feedParser.parseResponse(feed.entity().id(), response.body()).stream()
               .sorted(this::sortByPublishedAtDesc)
               .toList();
 
@@ -117,7 +170,7 @@ public class ScheduledFeedReader implements Closeable {
       } else {
         logger.debug(
             "{} returned {} entries, saving only the latest {}",
-            feed.url(),
+            feed.uri(),
             entries.size(),
             config.maxEntriesPerFetch());
 
@@ -126,12 +179,12 @@ public class ScheduledFeedReader implements Closeable {
     } catch (FeedParserException e) {
       if (logger.isDebugEnabled()) {
         var responseData = extractResponseData(response);
-        logger.debug("response data for {}: {}", feed.url(), responseData);
+        logger.debug("response data for {}: {}", feed.uri(), responseData);
       }
 
-      logger.warn("failed to parse feed: {}", feed.url(), e);
+      logger.warn("failed to parse feed: {}", feed.uri(), e);
     } catch (RepositoryException e) {
-      logger.warn("failed to save feed entries: {}", feed.url(), e);
+      logger.warn("failed to save feed entries: {}", feed.uri(), e);
     }
   }
 
@@ -162,9 +215,12 @@ public class ScheduledFeedReader implements Closeable {
 
   @Override
   public void close() {
+    if (!coordinator.beginStop()) {
+      return;
+    }
+
     try {
       logger.info("shutting down");
-
       scheduledExecutor.shutdownNow();
       fetchFeedExecutor.shutdownNow();
 
@@ -175,11 +231,15 @@ public class ScheduledFeedReader implements Closeable {
       if (fetchFeedExecutor.awaitTermination(5, TimeUnit.SECONDS) == false) {
         logger.warn("failed to stop fetchFeedExecutor in time");
       }
-
-      feedClient.close();
     } catch (InterruptedException e) {
       logger.warn("interrupted while awaiting termination", e);
       Thread.currentThread().interrupt();
+    } finally {
+      if (fetchFeedExecutor.isTerminated()) {
+        coordinator.workersTerminated();
+      }
+
+      feedClient.close();
     }
   }
 }
