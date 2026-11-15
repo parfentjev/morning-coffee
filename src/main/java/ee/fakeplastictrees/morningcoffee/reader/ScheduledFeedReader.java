@@ -6,20 +6,18 @@ import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import java.io.Closeable;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,18 +27,13 @@ public final class ScheduledFeedReader implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
   private final Config.Reader config;
-  private final ScheduledExecutorService scheduledExecutor;
+  private final ScheduledThreadPoolExecutor scheduledExecutor;
   private final ExecutorService fetchFeedExecutor;
   private final Repository repository;
   private final FeedClient feedClient;
   private final FeedParser feedParser;
 
-  // Task management. Lock manages access to the fields below via synchronized blocks.
-  private final Object lock;
-  private boolean schedulerStarted;
-  private boolean schedulerStopping;
-  private final LinkedHashMap<UUID, ProcessableFeed> pendingFeeds;
-  private final HashMap<UUID, FeedTask> activeTasks;
+  private final FeedCoordinator coordinator;
 
   /// Creates a scheduled feed reader.
   ///
@@ -48,50 +41,42 @@ public final class ScheduledFeedReader implements Closeable {
   /// @param repository feed repository
   public ScheduledFeedReader(Config.Reader config, Repository repository)
       throws IllegalArgumentException {
+    this(config, repository, null);
+  }
+
+  // Injected workers must execute asynchronously and must never run submissions inline.
+  ScheduledFeedReader(Config.Reader config, Repository repository, ExecutorService workers) {
     assertConfigValid(config);
 
     this.config = config;
     this.repository = repository;
 
-    this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-    this.fetchFeedExecutor = Executors.newFixedThreadPool(config.maxParallelFetches());
+    this.scheduledExecutor = new ScheduledThreadPoolExecutor(1);
+    this.scheduledExecutor.setRemoveOnCancelPolicy(true);
+    this.scheduledExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+    this.scheduledExecutor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
 
-    var throttlingDelay = Duration.ofSeconds(config.requestThrottlingDelaySeconds());
-    this.feedClient = new FeedClient(throttlingDelay, config.blockedNetworks());
+    this.fetchFeedExecutor =
+        workers == null ? Executors.newVirtualThreadPerTaskExecutor() : workers;
+
+    this.feedClient = new FeedClient(config.blockedNetworks());
     this.feedParser = new FeedParser();
 
-    this.lock = new Object();
-    this.pendingFeeds = new LinkedHashMap<>();
-    this.activeTasks = new HashMap<>();
+    this.coordinator =
+        new FeedCoordinator(
+            config.pollIntervalSeconds(),
+            Duration.ofSeconds(config.requestThrottlingDelaySeconds()).toNanos(),
+            config.maxParallelFetches(),
+            scheduledExecutor,
+            fetchFeedExecutor,
+            this::loadSnapshot,
+            this::processFeed,
+            System::nanoTime);
   }
 
   /// Starts scheduled feed polling.
   public void start() {
-
-    var interval = config.pollIntervalSeconds();
-    var timeUnit = TimeUnit.SECONDS;
-
-    synchronized (lock) {
-      if (schedulerStarted || schedulerStopping) {
-        return;
-      }
-
-      scheduledExecutor.scheduleWithFixedDelay(
-          () -> {
-            try {
-              fetchFeeds();
-            } catch (RuntimeException e) {
-              logger.error("unhandled reader runtime exception", e);
-            }
-          },
-          0,
-          interval,
-          timeUnit);
-
-      schedulerStarted = true;
-    }
-
-    logger.info("scheduled feed reader to run every {} {}", interval, timeUnit.name());
+    coordinator.start();
   }
 
   private void assertConfigValid(Config.Reader config) throws IllegalArgumentException {
@@ -130,47 +115,46 @@ public final class ScheduledFeedReader implements Closeable {
     }
   }
 
-  private void fetchFeeds() {
+  private Optional<List<FeedCoordinator.ProcessableFeed>> loadSnapshot() {
     List<Feed> feeds;
     try {
       feeds = repository.getFeeds();
     } catch (RepositoryException e) {
       logger.warn("failed to get feeds", e);
-      return;
+      return Optional.empty();
     }
 
+    var snapshot = new LinkedHashMap<UUID, FeedCoordinator.ProcessableFeed>();
     for (var feed : feeds) {
-      ProcessableFeed processableFeed;
       try {
-        processableFeed = new ProcessableFeed(feed);
+        snapshot.put(feed.id(), new FeedCoordinator.ProcessableFeed(feed));
       } catch (URISyntaxException e) {
         logger.error("failed to parse feed url: {}", feed.url());
-        continue;
       }
-
-      fetchFeedExecutor.execute(
-          () -> {
-            try {
-              processFeed(processableFeed);
-            } catch (InterruptedException _) {
-              Thread.currentThread().interrupt();
-            } catch (RuntimeException e) {
-              logger.error("unhandled process feed exception: {} {}", feed.id(), feed.url(), e);
-            }
-          });
     }
+
+    return Optional.of(List.copyOf(snapshot.values()));
   }
 
-  private void processFeed(ProcessableFeed feed) throws InterruptedException {
+  private void processFeed(FeedCoordinator.Admission task) {
+    var feed = task.processableFeed();
     // fetch
     HttpResponse<byte[]> response;
     try {
-      response = feedClient.fetchFeed(feed.uri(), feed.entity().requestTimeout());
+      response =
+          feedClient.fetchFeed(
+              feed.uri(), feed.entity().requestTimeout(), task::httpAttemptFinished);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+
+      return;
     } catch (FeedClientStatusCodeException e) {
       logger.debug("fetch feed unexpected status code: {} {}", feed.uri(), e.statusCode());
+
       return;
     } catch (FeedClientException e) {
       logger.warn("fetch feed request failed: {}", feed.uri(), e);
+
       return;
     }
 
@@ -231,13 +215,12 @@ public final class ScheduledFeedReader implements Closeable {
 
   @Override
   public void close() {
-    try (feedClient) {
+    if (!coordinator.beginStop()) {
+      return;
+    }
+
+    try {
       logger.info("shutting down");
-
-      synchronized (lock) {
-        schedulerStopping = true;
-      }
-
       scheduledExecutor.shutdownNow();
       fetchFeedExecutor.shutdownNow();
 
@@ -251,16 +234,12 @@ public final class ScheduledFeedReader implements Closeable {
     } catch (InterruptedException e) {
       logger.warn("interrupted while awaiting termination", e);
       Thread.currentThread().interrupt();
+    } finally {
+      if (fetchFeedExecutor.isTerminated()) {
+        coordinator.workersTerminated();
+      }
+
+      feedClient.close();
     }
   }
-
-  private record ProcessableFeed(Feed entity, URI uri, String hostname) {
-    ProcessableFeed(Feed entity) throws URISyntaxException {
-      var uri = new URI(entity.url());
-      var hostname = uri.getHost().toLowerCase(Locale.ROOT);
-      this(entity, uri, hostname);
-    }
-  }
-
-  private record FeedTask(ProcessableFeed processableFeed) {}
 }
