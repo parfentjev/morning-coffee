@@ -123,6 +123,38 @@ public class FeedEntryMapperTest {
     assertThat(output.publishedAt().toInstant()).isBetween(before.toInstant(), after.toInstant());
   }
 
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"", "  ", " html ", "application/custom"})
+  void selectsFirstNonblankBodyAndNormalizesType(String type) {
+    var input = syndEntry();
+
+    var blank = new com.rometools.rome.feed.synd.SyndContentImpl();
+    blank.setValue("  ");
+
+    var body = new com.rometools.rome.feed.synd.SyndContentImpl();
+    body.setValue("  <img src='image'>  ");
+    body.setType(type);
+
+    var fallback = new com.rometools.rome.feed.synd.SyndContentImpl();
+    fallback.setValue("fallback");
+
+    input.setDescription(fallback);
+    input.setContents(java.util.Arrays.asList(null, blank, body, fallback));
+
+    var output = syndEntryToFeedEntry(FEED_ID, input);
+    assertThat(output.body()).isEqualTo(body.getValue());
+    assertThat(output.bodyContentType())
+        .isEqualTo(type == null || type.isBlank() ? null : type.trim());
+
+    input.setContents(java.util.List.of(blank));
+    assertThat(syndEntryToFeedEntry(FEED_ID, input).body()).isEqualTo("fallback");
+
+    input.setDescription(null);
+    assertThat(syndEntryToFeedEntry(FEED_ID, input).body()).isNull();
+    assertThat(syndEntryToFeedEntry(FEED_ID, input).bodyContentType()).isNull();
+  }
+
   private SyndEntry syndEntry() {
     var input = new SyndEntryFixture();
     input.setLink("https://example.com/");

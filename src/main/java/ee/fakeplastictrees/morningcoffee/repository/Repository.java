@@ -58,7 +58,8 @@ public class Repository implements Closeable {
   }
 
   /// Saves a list of feed entries. This operation is idempotent and entries with the same feed and
-  /// external ID won't be inserted twice.
+  /// external ID won't be inserted twice. Missing optional content is filled atomically; existing
+  /// content and metadata are preserved.
   ///
   /// @param entries feed entry list to save
   /// @throws RepositoryException if feed entries cannot be saved
@@ -69,8 +70,15 @@ public class Repository implements Closeable {
         values(?, ?, ?, ?, ?)
         on conflict(external_id, feed_id) do nothing
         """;
+    var contentSql =
+        """
+        insert into public.entry_contents(entry_id, body, body_content_type)
+        select id, ?, ? from public.entries where external_id = ? and feed_id = ?
+        on conflict(entry_id) do nothing
+        """;
     try (var connection = connectionPool.getConnection();
-        var statement = connection.prepareStatement(sql)) {
+        var statement = connection.prepareStatement(sql);
+        var contentStatement = connection.prepareStatement(contentSql)) {
       try {
         connection.setAutoCommit(false);
         for (var entry : entries) {
@@ -83,6 +91,17 @@ public class Repository implements Closeable {
         }
 
         statement.executeBatch();
+        for (var entry : entries) {
+          if (entry.body() != null) {
+            contentStatement.setString(1, entry.body());
+            contentStatement.setString(2, entry.bodyContentType());
+            contentStatement.setString(3, entry.externalId());
+            contentStatement.setObject(4, entry.feedId());
+            contentStatement.addBatch();
+          }
+        }
+
+        contentStatement.executeBatch();
         connection.commit();
       } catch (SQLException e) {
         try {
@@ -94,7 +113,7 @@ public class Repository implements Closeable {
         throw e;
       }
     } catch (SQLException e) {
-      throw new RepositoryException("failed to insert feed entries", e);
+      throw new RepositoryException("failed to save feed entries and optional content", e);
     }
   }
 

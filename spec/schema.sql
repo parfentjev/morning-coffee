@@ -20,3 +20,17 @@ create table public.entries
     constraint entries_feed_id_fkey foreign key (feed_id) references public.feeds (id),
     constraint entries_external_id_feed_id_key unique (external_id, feed_id)
 );
+
+create index entries_published_at_idx on public.entries using btree (published_at desc);
+
+create table public.entry_contents
+(
+    entry_id uuid not null,
+    body text not null,
+    body_content_type text,
+    constraint entry_contents_pkey primary key (entry_id),
+    constraint entry_contents_entry_id_fkey foreign key (entry_id)
+        references public.entries (id) on
+delete
+	cascade
+);
