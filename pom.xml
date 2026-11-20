@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <project
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
 >
     <modelVersion>4.0.0</modelVersion>
 
@@ -82,9 +82,9 @@
         </dependency>
         <!-- controller -->
         <dependency>
-            <groupId>org.owasp.encoder</groupId>
-            <artifactId>encoder</artifactId>
-            <version>1.6.0</version>
+            <groupId>io.pebbletemplates</groupId>
+            <artifactId>pebble</artifactId>
+            <version>4.1.3</version>
         </dependency>
         <!-- testing -->
         <dependency>
@@ -154,14 +154,14 @@
                             </filters>
                             <transformers>
                                 <transformer
-                  implementation="org.apache.logging.log4j.maven.plugins.shade.transformer.Log4j2PluginCacheFileTransformer"
-                />
+                                    implementation="org.apache.logging.log4j.maven.plugins.shade.transformer.Log4j2PluginCacheFileTransformer"
+                                />
                                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"
-                />
+                                    implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"
+                                />
                                 <transformer
-                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"
-                >
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"
+                                >
                                     <mainClass>ee.fakeplastictrees.morningcoffee.App</mainClass>
                                     <manifestEntries>
                                         <Multi-Release>true</Multi-Release>
