@@ -5,12 +5,13 @@ import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntryDto;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
-import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateData;
-import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateException;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.net.HttpURLConnection;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /// Serves the page containing recent feed entries.
 class IndexHandler extends AbstractHttpHandler {
@@ -19,25 +20,24 @@ class IndexHandler extends AbstractHttpHandler {
       DateTimeFormatter.ofPattern("MMM dd HH:mm").withZone(ZoneOffset.UTC);
 
   private final Config.WebServer config;
-  private final TemplateService templateService;
+  private final TemplateService templates;
   private final Repository repository;
 
   /// Creates an index handler.
   ///
   /// @param config web server configuration
   /// @param repository feed repository
-  /// @param templateService service that manages HTML templates
-  public IndexHandler(
-      Config.WebServer config, Repository repository, TemplateService templateService) {
+  /// @param templates service that manages HTML templates
+  public IndexHandler(Config.WebServer config, Repository repository, TemplateService templates) {
     this.config = config;
     this.repository = repository;
-    this.templateService = templateService;
+    this.templates = templates;
   }
 
   @Override
   protected Response response(HttpExchange exchange) throws Exception {
-    var entries = new TemplateData("entries", buildEntries());
-    var body = templateService.getIndexTemplate().toHtml(entries);
+    var entries = Map.<String, Object>of("entries", buildEntries());
+    var body = templates.render("index.html", entries);
 
     return Response.of(CONTENT_TYPE_TEXT_HTML, body, HttpURLConnection.HTTP_OK);
   }
@@ -52,26 +52,21 @@ class IndexHandler extends AbstractHttpHandler {
     return "/";
   }
 
-  private String buildEntries() throws RepositoryException, TemplateException {
-    var output = new StringBuilder();
-    var entriesNumber = config.entriesPerPage();
-    for (var entry : repository.getEntries(entriesNumber)) {
-      buildEntry(output, entry);
+  private List<Map<String, Object>> buildEntries() throws RepositoryException {
+    var entries = new ArrayList<Map<String, Object>>();
+    for (var entry : repository.getEntries(config.entriesPerPage())) {
+      entries.add(buildEntry(entry));
     }
 
-    return output.toString();
+    return entries;
   }
 
-  private void buildEntry(StringBuilder output, FeedEntryDto entry) throws TemplateException {
-    var template = templateService.getFeedEntryTemplate();
-
-    var dateFull = new TemplateData("entry.date.full", entry.publishedAt().format(DATE_FULL));
-    var dateShort = new TemplateData("entry.date.short", entry.publishedAt().format(DATE_SHORT));
-    var feedName = new TemplateData("feed.name", entry.feedName());
-    var entryLink = new TemplateData("entry.link", entry.link());
-    var entryTitle = new TemplateData("entry.title", entry.title());
-
-    var entryHtml = template.toHtml(dateFull, dateShort, feedName, entryLink, entryTitle);
-    output.append(entryHtml);
+  private Map<String, Object> buildEntry(FeedEntryDto entry) {
+    return Map.of(
+        "dateFull", entry.publishedAt().format(DATE_FULL),
+        "dateShort", entry.publishedAt().format(DATE_SHORT),
+        "feedName", entry.feedName(),
+        "link", entry.link(),
+        "title", entry.title());
   }
 }

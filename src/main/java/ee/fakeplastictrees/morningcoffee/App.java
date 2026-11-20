@@ -5,8 +5,8 @@ import static java.util.Optional.ofNullable;
 import ee.fakeplastictrees.morningcoffee.reader.ScheduledFeedReader;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.WebServer;
+import ee.fakeplastictrees.morningcoffee.webserver.render.PebbleTemplateService;
 import ee.fakeplastictrees.morningcoffee.webserver.render.StaticResourceService;
-import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.io.Closeable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,7 +42,7 @@ public class App implements Closeable {
     reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();
 
-    var templates = TemplateService.init();
+    var templates = new PebbleTemplateService();
     var resources = StaticResourceService.init();
 
     server = new WebServer(config.webServer(), repository, templates, resources);
