@@ -1,5 +1,6 @@
 package ee.fakeplastictrees.morningcoffee.reader;
 
+import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEntry;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import java.time.OffsetDateTime;
@@ -54,6 +55,29 @@ class FeedEntryMapper {
       publishedAt = OffsetDateTime.now();
     }
 
-    return new FeedEntry(externalId, publishedAt, feedId, title, link);
+    var content = selectContent(input);
+    var body = content == null ? null : content.getValue();
+    var type = content == null ? null : content.getType();
+    type = type == null || type.isBlank() ? null : type.trim();
+
+    return new FeedEntry(externalId, publishedAt, feedId, title, link, body, type);
+  }
+
+  private static SyndContent selectContent(SyndEntry input) {
+    var contents = input.getContents();
+    if (contents != null) {
+      for (var content : contents) {
+        if (hasBody(content)) {
+          return content;
+        }
+      }
+    }
+
+    var description = input.getDescription();
+    return hasBody(description) ? description : null;
+  }
+
+  private static boolean hasBody(SyndContent content) {
+    return content != null && content.getValue() != null && !content.getValue().isBlank();
   }
 }
