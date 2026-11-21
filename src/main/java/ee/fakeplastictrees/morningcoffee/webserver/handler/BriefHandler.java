@@ -1,29 +1,39 @@
 package ee.fakeplastictrees.morningcoffee.webserver.handler;
 
 import com.sun.net.httpserver.HttpExchange;
+import ee.fakeplastictrees.morningcoffee.brief.BriefService;
+import ee.fakeplastictrees.morningcoffee.util.DateFormat;
+import ee.fakeplastictrees.morningcoffee.webserver.render.MarkdownRenderer;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.net.HttpURLConnection;
 import java.util.Map;
 
-/// Serves the page containing recent feed entries.
+/// Serves the latest brief.
 class BriefHandler extends AbstractHttpHandler {
-  private final TemplateService templates;
+  private final MarkdownRenderer renderer = new MarkdownRenderer();
+  private final BriefService service;
+  private final TemplateService template;
 
-  /// Creates an index handler.
+  /// Creates a brief handler.
   ///
-  /// @param config web server configuration
-  /// @param repository feed repository
-  /// @param templates service that manages HTML templates
-  public BriefHandler(TemplateService templates) {
-    this.templates = templates;
+  /// @param service service providing the latest brief
+  /// @param template service that manages HTML templates
+  public BriefHandler(BriefService service, TemplateService template) {
+    this.service = service;
+    this.template = template;
   }
 
   @Override
   protected Response response(HttpExchange exchange) throws Exception {
-    var content = Map.<String, Object>of("brief", "brief placeholder");
-    var body = templates.render("brief.html", content);
+    // TODO: handle the empty case
+    var brief = service.latest().get();
+    var date = brief.publishedAt().format(DateFormat.SHORT);
+    var bodyHtml = renderer.render(brief.body());
+    var content = Map.<String, Object>of("date", date, "bodyHtml", bodyHtml);
 
-    return Response.of(CONTENT_TYPE_TEXT_HTML, body, HttpURLConnection.HTTP_OK);
+    var response = template.render("brief.html", content);
+
+    return Response.of(CONTENT_TYPE_TEXT_HTML, response, HttpURLConnection.HTTP_OK);
   }
 
   @Override

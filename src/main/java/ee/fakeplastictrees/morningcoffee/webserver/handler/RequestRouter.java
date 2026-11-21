@@ -2,6 +2,7 @@ package ee.fakeplastictrees.morningcoffee.webserver.handler;
 
 import com.sun.net.httpserver.HttpServer;
 import ee.fakeplastictrees.morningcoffee.Config;
+import ee.fakeplastictrees.morningcoffee.brief.BriefService;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.render.StaticResourceService;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
@@ -19,10 +20,11 @@ public class RequestRouter {
       Config.WebServer config,
       Repository repository,
       HttpServer server,
+      BriefService briefService,
       TemplateService templateService,
       StaticResourceService staticResourceService) {
     server.createContext("/", new IndexHandler(config, repository, templateService));
-    server.createContext("/brief", new BriefHandler(templateService));
+    server.createContext("/brief", new BriefHandler(briefService, templateService));
     server.createContext("/static", new StaticHandler(staticResourceService));
   }
 }

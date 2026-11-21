@@ -2,6 +2,7 @@ package ee.fakeplastictrees.morningcoffee.webserver;
 
 import com.sun.net.httpserver.HttpServer;
 import ee.fakeplastictrees.morningcoffee.Config;
+import ee.fakeplastictrees.morningcoffee.brief.BriefService;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.handler.RequestRouter;
 import ee.fakeplastictrees.morningcoffee.webserver.render.StaticResourceService;
@@ -22,8 +23,9 @@ public class WebServer implements Closeable {
 
   private final Config.WebServer config;
   private final Repository repository;
-  private final TemplateService templates;
-  private final StaticResourceService resources;
+  private final BriefService briefService;
+  private final TemplateService templateService;
+  private final StaticResourceService resourceService;
   private final ExecutorService requestExecutor;
 
   private HttpServer server;
@@ -32,17 +34,19 @@ public class WebServer implements Closeable {
   ///
   /// @param config web server configuration
   /// @param repository feed repository
-  /// @param resources service that manages dynamic HTML templates
-  /// @param templates service that manages static resources
+  /// @param templateService service that manages dynamic HTML templates
+  /// @param resourceService service that manages static resources
   public WebServer(
       Config.WebServer config,
       Repository repository,
-      TemplateService resources,
-      StaticResourceService templates) {
+      BriefService briefService,
+      TemplateService templateService,
+      StaticResourceService resourceService) {
     this.config = config;
     this.repository = repository;
-    this.templates = resources;
-    this.resources = templates;
+    this.briefService = briefService;
+    this.templateService = templateService;
+    this.resourceService = resourceService;
     this.requestExecutor = Executors.newVirtualThreadPerTaskExecutor();
   }
 
@@ -51,7 +55,8 @@ public class WebServer implements Closeable {
   /// @throws WebServerException if the HTTP server cannot be created
   public void start() throws WebServerException {
     server = createHttpServer(config.serverHostname(), config.serverPort());
-    RequestRouter.registerHandlers(config, repository, server, templates, resources);
+    RequestRouter.registerHandlers(
+        config, repository, server, briefService, templateService, resourceService);
     server.setExecutor(requestExecutor);
     server.start();
 

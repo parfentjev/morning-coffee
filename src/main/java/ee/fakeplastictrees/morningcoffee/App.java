@@ -2,6 +2,8 @@ package ee.fakeplastictrees.morningcoffee;
 
 import static java.util.Optional.ofNullable;
 
+import ee.fakeplastictrees.morningcoffee.brief.BriefServiceFactory;
+import ee.fakeplastictrees.morningcoffee.brief.BriefServiceFactory.Provider;
 import ee.fakeplastictrees.morningcoffee.reader.ScheduledFeedReader;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.WebServer;
@@ -42,10 +44,13 @@ public class App implements Closeable {
     reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();
 
-    var templates = new PebbleTemplateService();
-    var resources = StaticResourceService.init();
+    var briefService = BriefServiceFactory.get(Provider.DUMMY);
+    var templateService = new PebbleTemplateService();
+    var resourceService = StaticResourceService.init();
 
-    server = new WebServer(config.webServer(), repository, templates, resources);
+    server =
+        new WebServer(
+            config.webServer(), repository, briefService, templateService, resourceService);
     server.start();
   }
 

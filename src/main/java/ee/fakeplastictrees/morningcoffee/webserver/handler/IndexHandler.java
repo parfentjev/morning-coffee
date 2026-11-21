@@ -5,20 +5,15 @@ import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntryDto;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
+import ee.fakeplastictrees.morningcoffee.util.DateFormat;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.net.HttpURLConnection;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /// Serves the page containing recent feed entries.
 class IndexHandler extends AbstractHttpHandler {
-  private static final DateTimeFormatter DATE_FULL = DateTimeFormatter.ISO_INSTANT;
-  private static final DateTimeFormatter DATE_SHORT =
-      DateTimeFormatter.ofPattern("MMM dd HH:mm").withZone(ZoneOffset.UTC);
-
   private final Config.WebServer config;
   private final TemplateService templates;
   private final Repository repository;
@@ -58,8 +53,8 @@ class IndexHandler extends AbstractHttpHandler {
 
   private Map<String, Object> buildEntry(FeedEntryDto entry) {
     return Map.of(
-        "dateFull", entry.publishedAt().format(DATE_FULL),
-        "dateShort", entry.publishedAt().format(DATE_SHORT),
+        "dateFull", entry.publishedAt().format(DateFormat.FULL),
+        "dateShort", entry.publishedAt().format(DateFormat.SHORT),
         "feedName", entry.feedName(),
         "link", entry.link(),
         "title", entry.title());
