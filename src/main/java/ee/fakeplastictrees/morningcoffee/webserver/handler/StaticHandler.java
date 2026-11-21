@@ -21,11 +21,6 @@ public class StaticHandler extends AbstractHttpHandler {
   }
 
   @Override
-  protected String requestPath() {
-    return "%s.+".formatted(REQUEST_PATH_PREFIX);
-  }
-
-  @Override
   protected Response response(HttpExchange exchange) throws Exception {
     var relativePath = exchange.getRequestURI().getPath().substring(REQUEST_PATH_PREFIX.length());
 
