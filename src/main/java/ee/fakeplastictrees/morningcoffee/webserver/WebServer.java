@@ -3,7 +3,7 @@ package ee.fakeplastictrees.morningcoffee.webserver;
 import com.sun.net.httpserver.HttpServer;
 import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
-import ee.fakeplastictrees.morningcoffee.webserver.handler.HandlerManager;
+import ee.fakeplastictrees.morningcoffee.webserver.handler.RequestRouter;
 import ee.fakeplastictrees.morningcoffee.webserver.render.StaticResourceService;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.io.Closeable;
@@ -51,7 +51,7 @@ public class WebServer implements Closeable {
   /// @throws WebServerException if the HTTP server cannot be created
   public void start() throws WebServerException {
     server = createHttpServer(config.serverHostname(), config.serverPort());
-    HandlerManager.registerHandlers(config, repository, server, templates, resources);
+    RequestRouter.registerHandlers(config, repository, server, templates, resources);
     server.setExecutor(requestExecutor);
     server.start();
 

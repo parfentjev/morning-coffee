@@ -47,11 +47,6 @@ class IndexHandler extends AbstractHttpHandler {
     return "GET";
   }
 
-  @Override
-  protected String requestPath() {
-    return "/";
-  }
-
   private List<Map<String, Object>> buildEntries() throws RepositoryException {
     var entries = new ArrayList<Map<String, Object>>();
     for (var entry : repository.getEntries(config.entriesPerPage())) {

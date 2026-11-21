@@ -7,7 +7,7 @@ import ee.fakeplastictrees.morningcoffee.webserver.render.StaticResourceService;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 
 /// Registers application HTTP handlers.
-public class HandlerManager {
+public class RequestRouter {
   /// Registers HTTP handlers with the given [HttpServer].
   ///
   /// @param config web server configuration
@@ -22,6 +22,7 @@ public class HandlerManager {
       TemplateService templateService,
       StaticResourceService staticResourceService) {
     server.createContext("/", new IndexHandler(config, repository, templateService));
+    server.createContext("/brief", new BriefHandler(templateService));
     server.createContext("/static", new StaticHandler(staticResourceService));
   }
 }

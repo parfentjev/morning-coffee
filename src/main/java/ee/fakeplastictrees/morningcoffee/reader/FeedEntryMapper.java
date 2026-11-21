@@ -30,6 +30,7 @@ class FeedEntryMapper {
           case String v when v.isBlank() -> link;
           case String v -> v;
         };
+    title = title.trim();
 
     var externalId =
         switch (input.getUri()) {

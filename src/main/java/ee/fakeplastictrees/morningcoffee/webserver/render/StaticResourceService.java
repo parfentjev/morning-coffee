@@ -23,7 +23,7 @@ public class StaticResourceService {
     var resources =
         loadResources(
             "favicon.png",
-            "e73de0c273d6297f0654c096066dedf3e4b1261dfcf3c6ac4c44236d932bf9c4.css",
+            "e8482d5f887a2952839cd9c895286d9cca8a100235e1626b2dae6098ac2e2df9.css",
             "741763f8277c65485b2779875913fecf00bb694935532e0f01886d4800c8e1c3.js");
 
     return new StaticResourceService(resources);
