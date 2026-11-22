@@ -3,6 +3,7 @@ package ee.fakeplastictrees.morningcoffee;
 import static java.util.Optional.ofNullable;
 
 import ee.fakeplastictrees.morningcoffee.brief.BriefServiceFactory;
+import ee.fakeplastictrees.morningcoffee.brief.ScheduledBriefGenerator;
 import ee.fakeplastictrees.morningcoffee.common.repository.ConnectionPool;
 import ee.fakeplastictrees.morningcoffee.reader.ScheduledFeedReader;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
@@ -51,7 +52,10 @@ public class App implements Closeable {
     reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();
 
+    // TODO: probably the service itself doesn't need to be initialised here, it can have
+    // class-level visibility
     var briefService = BriefServiceFactory.get(config.brief(), pool);
+    var briefGenerator = new ScheduledBriefGenerator();
     var templateService = new PebbleTemplateService();
     var resourceService = StaticResourceService.init();
 
