@@ -20,6 +20,7 @@ public class App implements Closeable {
 
   private WebServer server;
   private ScheduledFeedReader reader;
+  private ScheduledBriefGenerator briefGenerator;
   private ConnectionPool pool;
 
   /// Starts application.
@@ -52,10 +53,10 @@ public class App implements Closeable {
     reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();
 
-    // TODO: probably the service itself doesn't need to be initialised here, it can have
-    // class-level visibility
     var briefService = BriefServiceFactory.get(config.brief(), pool);
-    var briefGenerator = new ScheduledBriefGenerator();
+    briefGenerator = new ScheduledBriefGenerator(config.brief().schedule());
+    briefGenerator.start();
+
     var templateService = new PebbleTemplateService();
     var resourceService = StaticResourceService.init();
 
@@ -68,6 +69,7 @@ public class App implements Closeable {
   @Override
   public void close() {
     ofNullable(server).ifPresent(WebServer::close);
+    ofNullable(briefGenerator).ifPresent(ScheduledBriefGenerator::close);
     ofNullable(reader).ifPresent(ScheduledFeedReader::close);
     ofNullable(pool).ifPresent(ConnectionPool::close);
   }

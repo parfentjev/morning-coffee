@@ -5,6 +5,7 @@ import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import inet.ipaddr.IncompatibleAddressException;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -198,11 +199,13 @@ public final class Config {
   public static final class Brief {
     private final String provider;
     private final Anthropic anthropic;
+    private final Schedule schedule;
 
     private Brief() {
       var env = new EnvironmentReader("BRIEF");
       this.provider = env.optional("PROVIDER", "DUMMY");
       this.anthropic = new Anthropic();
+      this.schedule = new Schedule();
     }
 
     /// {@return the configured brief provider name}
@@ -213,6 +216,40 @@ public final class Config {
     /// {@return the configuration for the Anthropic brief provider}
     public Anthropic anthropic() {
       return anthropic;
+    }
+
+    /// {@return the daily brief schedule}
+    public Schedule schedule() {
+      return schedule;
+    }
+
+    /// Configures the local time for daily brief generation.
+    public static final class Schedule {
+      private final ZoneId timeZone;
+      private final int hour;
+      private final int minute;
+
+      private Schedule() {
+        var env = new EnvironmentReader("BRIEF_SCHEDULE");
+        this.timeZone = ZoneId.of(env.optional("TIME_ZONE", "Etc/UTC"));
+        this.hour = env.optional("HOUR", 6, Integer::valueOf);
+        this.minute = env.optional("MINUTE", 0, Integer::valueOf);
+      }
+
+      /// {@return the time zone for the daily brief}
+      public ZoneId timeZone() {
+        return timeZone;
+      }
+
+      /// {@return the local hour for the daily brief}
+      public int hour() {
+        return hour;
+      }
+
+      /// {@return the minute within the hour for the daily brief}
+      public int minute() {
+        return minute;
+      }
     }
 
     /// Configures Anthropic Brief providers.

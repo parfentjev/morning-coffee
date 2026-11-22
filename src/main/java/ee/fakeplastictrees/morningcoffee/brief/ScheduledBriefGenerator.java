@@ -1,5 +1,7 @@
 package ee.fakeplastictrees.morningcoffee.brief;
 
+import ee.fakeplastictrees.morningcoffee.Config;
+import java.io.Closeable;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -9,22 +11,34 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ScheduledBriefGenerator {
+public class ScheduledBriefGenerator implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
-  // TODO: store in a config
-  private static final ZoneId TIME_ZONE = ZoneId.of("Europe/Tallinn");
-  // TODO: store in a config
-  private static final int SCHEDULED_HOUR = 20;
-  // TODO: store in a config
-  private static final int SCHEDULED_MINUTE = 29;
+  private final ZoneId timeZone;
+  private final int scheduledHour;
+  private final int scheduledMinute;
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-  public ScheduledBriefGenerator() {
+  public ScheduledBriefGenerator(Config.Brief.Schedule config) {
+    this.timeZone = config.timeZone();
+    this.scheduledHour = config.hour();
+    this.scheduledMinute = config.minute();
+  }
+
+  public void start() {
     scheduleNext();
   }
 
-  private void scheduleNext() {
+  @Override
+  public synchronized void close() {
+    executor.shutdownNow();
+  }
+
+  private synchronized void scheduleNext() {
+    if (executor.isShutdown()) {
+      return;
+    }
+
     var timeUntil = timeUntilScheduledHour();
     logger.info("scheduling the next brief to be generated in {}", timeUntil);
 
@@ -43,9 +57,8 @@ public class ScheduledBriefGenerator {
   }
 
   private Duration timeUntilScheduledHour() {
-    var now = ZonedDateTime.now(TIME_ZONE);
-    var scheduledTime =
-        now.toLocalDate().atTime(SCHEDULED_HOUR, SCHEDULED_MINUTE).atZone(TIME_ZONE);
+    var now = ZonedDateTime.now(timeZone);
+    var scheduledTime = now.toLocalDate().atTime(scheduledHour, scheduledMinute).atZone(timeZone);
     if (now.isAfter(scheduledTime)) {
       scheduledTime = scheduledTime.plusDays(1);
     }
