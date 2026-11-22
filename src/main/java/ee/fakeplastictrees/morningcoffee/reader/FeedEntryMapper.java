@@ -9,6 +9,12 @@ import java.util.Date;
 import java.util.UUID;
 
 class FeedEntryMapper {
+  /// Converts a parsed feed item into a feed entry for storage.
+  ///
+  /// @param feedId identifier of the feed containing the item
+  /// @param input parsed RSS or Atom item
+  /// @return the mapped entry, including its content when available
+  /// @throws IllegalArgumentException if the link is missing or lacks an HTTP or HTTPS prefix
   @SuppressWarnings("HttpUrlsUsage")
   public static FeedEntry syndEntryToFeedEntry(UUID feedId, SyndEntry input)
       throws IllegalArgumentException {

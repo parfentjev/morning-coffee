@@ -1,6 +1,7 @@
 package ee.fakeplastictrees.morningcoffee.repository;
 
-import ee.fakeplastictrees.morningcoffee.Config;
+import ee.fakeplastictrees.morningcoffee.common.repository.ConnectionPool;
+import ee.fakeplastictrees.morningcoffee.common.repository.RepositoryException;
 import ee.fakeplastictrees.morningcoffee.model.Feed;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntryDto;
@@ -22,12 +23,11 @@ public class Repository implements Closeable {
 
   private final ConnectionPool connectionPool;
 
-  /// Creates a repository from database configuration.
+  /// Creates a feed repository backed by the supplied connection pool.
   ///
-  /// @param config database configuration
-  public Repository(Config.Repository config) {
-    this.connectionPool =
-        new ConnectionPool(config.postgresUrl(), config.postgresUser(), config.postgresPassword());
+  /// @param connectionPool pool used for feed reads and writes and closed by [#close()]
+  public Repository(ConnectionPool connectionPool) {
+    this.connectionPool = connectionPool;
   }
 
   /// Returns feeds enabled for polling.
@@ -64,20 +64,22 @@ public class Repository implements Closeable {
   /// @param entries feed entry list to save
   /// @throws RepositoryException if feed entries cannot be saved
   public void saveFeedEntries(List<FeedEntry> entries) throws RepositoryException {
-    var sql =
+    var entrySql =
         """
         insert into entries(external_id, published_at, feed_id, title, link)
         values(?, ?, ?, ?, ?)
         on conflict(external_id, feed_id) do nothing
         """;
+
     var contentSql =
         """
         insert into public.entry_contents(entry_id, body, body_content_type)
         select id, ?, ? from public.entries where external_id = ? and feed_id = ?
         on conflict(entry_id) do nothing
         """;
+
     try (var connection = connectionPool.getConnection();
-        var statement = connection.prepareStatement(sql);
+        var statement = connection.prepareStatement(entrySql);
         var contentStatement = connection.prepareStatement(contentSql)) {
       try {
         connection.setAutoCommit(false);

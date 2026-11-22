@@ -3,7 +3,7 @@ package ee.fakeplastictrees.morningcoffee;
 import static java.util.Optional.ofNullable;
 
 import ee.fakeplastictrees.morningcoffee.brief.BriefServiceFactory;
-import ee.fakeplastictrees.morningcoffee.brief.BriefServiceFactory.Provider;
+import ee.fakeplastictrees.morningcoffee.common.repository.ConnectionPool;
 import ee.fakeplastictrees.morningcoffee.reader.ScheduledFeedReader;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
 import ee.fakeplastictrees.morningcoffee.webserver.WebServer;
@@ -17,9 +17,9 @@ import org.apache.logging.log4j.Logger;
 public class App implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
-  private Repository repository;
-  private ScheduledFeedReader reader;
   private WebServer server;
+  private ScheduledFeedReader reader;
+  private ConnectionPool pool;
 
   /// Starts application.
   static void main() {
@@ -39,12 +39,19 @@ public class App implements Closeable {
   /// @throws Exception if an application service cannot be initialized or started
   public void start() throws Exception {
     var config = Config.init();
-    repository = new Repository(config.repository());
 
+    pool =
+        new ConnectionPool(
+            config.repository().postgresUrl(),
+            config.repository().postgresUser(),
+            config.repository().postgresPassword());
+
+    // TODO: move this repo into the reader package
+    var repository = new Repository(pool);
     reader = new ScheduledFeedReader(config.reader(), repository);
     reader.start();
 
-    var briefService = BriefServiceFactory.get(Provider.DUMMY);
+    var briefService = BriefServiceFactory.get(config.brief(), pool);
     var templateService = new PebbleTemplateService();
     var resourceService = StaticResourceService.init();
 
@@ -58,6 +65,6 @@ public class App implements Closeable {
   public void close() {
     ofNullable(server).ifPresent(WebServer::close);
     ofNullable(reader).ifPresent(ScheduledFeedReader::close);
-    ofNullable(repository).ifPresent(Repository::close);
+    ofNullable(pool).ifPresent(ConnectionPool::close);
   }
 }

@@ -1,10 +1,10 @@
 package ee.fakeplastictrees.morningcoffee.reader;
 
 import ee.fakeplastictrees.morningcoffee.Config;
+import ee.fakeplastictrees.morningcoffee.common.repository.RepositoryException;
 import ee.fakeplastictrees.morningcoffee.model.Feed;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
-import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import java.io.Closeable;
 import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
@@ -44,7 +44,12 @@ public final class ScheduledFeedReader implements Closeable {
     this(config, repository, null);
   }
 
-  // Injected workers must execute asynchronously and must never run submissions inline.
+  /// Creates a scheduled reader with a configurable executor for feed fetches.
+  ///
+  /// @param config feed polling and retrieval settings
+  /// @param repository feed repository
+  /// @param workers executor that runs submissions asynchronously, or null to use virtual threads
+  /// @throws IllegalArgumentException if the reader configuration is invalid
   ScheduledFeedReader(Config.Reader config, Repository repository, ExecutorService workers) {
     assertConfigValid(config);
 

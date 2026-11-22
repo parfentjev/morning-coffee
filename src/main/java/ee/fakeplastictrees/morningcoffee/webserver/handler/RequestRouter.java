@@ -14,6 +14,7 @@ public class RequestRouter {
   /// @param config web server configuration
   /// @param repository repository used by handlers to retrieve data necessary for page rendering
   /// @param server server that processes user requests
+  /// @param briefService service used by the brief handler to retrieve published briefs
   /// @param templateService service that manages HTML templates
   /// @param staticResourceService service that manages static resources
   public static void registerHandlers(
@@ -24,7 +25,7 @@ public class RequestRouter {
       TemplateService templateService,
       StaticResourceService staticResourceService) {
     server.createContext("/", new IndexHandler(config, repository, templateService));
-    server.createContext("/brief", new BriefHandler(briefService, templateService));
+    server.createContext("/brief", new BriefHandler(config, briefService, templateService));
     server.createContext("/static", new StaticHandler(staticResourceService));
   }
 }

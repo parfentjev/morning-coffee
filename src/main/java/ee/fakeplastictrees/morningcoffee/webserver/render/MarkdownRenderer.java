@@ -28,6 +28,9 @@ public final class MarkdownRenderer {
           .build();
 
   /// Converts Markdown to HTML.
+  ///
+  /// @param markdown Markdown source to render
+  /// @return an HTML fragment with embedded HTML escaped and link and image destinations filtered
   public String render(String markdown) {
     return renderer.render(parser.parse(markdown));
   }

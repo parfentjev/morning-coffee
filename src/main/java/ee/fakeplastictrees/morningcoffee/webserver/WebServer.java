@@ -34,6 +34,7 @@ public class WebServer implements Closeable {
   ///
   /// @param config web server configuration
   /// @param repository feed repository
+  /// @param briefService service that supplies briefs for the brief page
   /// @param templateService service that manages dynamic HTML templates
   /// @param resourceService service that manages static resources
   public WebServer(

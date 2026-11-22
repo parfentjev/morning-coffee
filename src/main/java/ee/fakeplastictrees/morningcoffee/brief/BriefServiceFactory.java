@@ -1,13 +1,31 @@
 package ee.fakeplastictrees.morningcoffee.brief;
 
+import ee.fakeplastictrees.morningcoffee.Config;
+import ee.fakeplastictrees.morningcoffee.common.repository.ConnectionPool;
+
 public class BriefServiceFactory {
-  public static BriefService get(Provider provider) {
-    return switch (provider) {
+  private static BriefRepository repository;
+
+  /// Creates a brief service for the configured provider.
+  ///
+  /// @param config provider selection and provider-specific settings
+  /// @param pool connection pool used for brief storage
+  /// @return the selected brief service
+  /// @throws IllegalArgumentException if the provider is unknown or its configuration is invalid
+  public static BriefService get(Config.Brief config, ConnectionPool pool)
+      throws IllegalArgumentException {
+    if (repository == null) {
+      repository = new PostgresBriefRepository(pool);
+    }
+
+    return switch (Provider.valueOf(config.provider())) {
       case DUMMY -> new DummyBriefService();
+      case ANTHROPIC -> new AnthropicBriefService(config.anthropic(), repository);
     };
   }
 
-  public enum Provider {
-    DUMMY
+  private enum Provider {
+    DUMMY,
+    ANTHROPIC
   }
 }

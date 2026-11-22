@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class MarkdownRendererTest {
   private final MarkdownRenderer renderer = new MarkdownRenderer();
 
+  /// Verifies that Markdown formatting is rendered and embedded HTML is escaped.
   @Test
   void rendersMarkdownAndEscapesInlineAndBlockHtml() {
     var html = renderer.render("**Brief** with <em>markup</em>\n\n<script>example</script>");
@@ -19,6 +20,9 @@ class MarkdownRendererTest {
         .doesNotContain("<em>", "<script>");
   }
 
+  /// Verifies that links and images retain absolute HTTP and HTTPS destinations.
+  ///
+  /// @param url an allowed destination
   @ParameterizedTest
   @ValueSource(strings = {"http://example.org/a", "https://example.org/b", "HTTPS://example.org"})
   void permitsAbsoluteWebLinksAndImages(String url) {
@@ -27,6 +31,9 @@ class MarkdownRendererTest {
     assertThat(html).contains("href=\"" + url + "\"", "src=\"" + url + "\"");
   }
 
+  /// Verifies that rejected destinations are removed while link text and image labels remain.
+  ///
+  /// @param url a rejected destination
   @ParameterizedTest
   @ValueSource(strings = {
       "javascript:example", "data:text/plain,example", "mailto:a@example.org",
@@ -38,6 +45,7 @@ class MarkdownRendererTest {
     assertThat(html).contains(">link</a>", "alt=\"image\"").doesNotContain("href=", "src=");
   }
 
+  /// Verifies that explicit links and autolinks open with opener access disabled.
   @Test
   void opensLinksInANewBrowsingContextWithoutAnOpener() {
     for (var markdown : new String[] {"[source](https://example.org)", "<https://example.org>"}) {

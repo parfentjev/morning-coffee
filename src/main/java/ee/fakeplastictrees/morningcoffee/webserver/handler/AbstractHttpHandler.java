@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/// Handles requests matching one HTTP method and request-path pattern.
+/// Handles requests routed to this handler for its accepted HTTP method.
 abstract class AbstractHttpHandler implements HttpHandler {
   private static final Logger logger = LogManager.getLogger();
 
@@ -39,7 +39,7 @@ abstract class AbstractHttpHandler implements HttpHandler {
   /// @return accepted HTTP method
   protected abstract String requestMethod();
 
-  /// Builds a response for a matching request.
+  /// Builds a response for a routed request with the accepted HTTP method.
   ///
   /// @param exchange current HTTP exchange
   /// @return response to send

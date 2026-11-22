@@ -1,4 +1,4 @@
-package ee.fakeplastictrees.morningcoffee.repository;
+package ee.fakeplastictrees.morningcoffee.common.repository;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -7,7 +7,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 
-class ConnectionPool implements Closeable {
+public class ConnectionPool implements Closeable {
   private final HikariDataSource dataSource;
 
   /// Creates a new database connection pool.
@@ -15,7 +15,7 @@ class ConnectionPool implements Closeable {
   /// @param url jdbc url string: `jdbc:postgresql://127.0.0.1:5432/database`
   /// @param username username used to establish a connection
   /// @param password password used to establish a connection
-  ConnectionPool(String url, String username, String password) {
+  public ConnectionPool(String url, String username, String password) {
     var config = new HikariConfig();
     config.setJdbcUrl(url);
     config.setUsername(username);
@@ -35,7 +35,11 @@ class ConnectionPool implements Closeable {
     this.dataSource = new HikariDataSource(config);
   }
 
-  Connection getConnection() throws SQLException {
+  /// Borrows a database connection from the pool.
+  ///
+  /// @return a connection that the caller must close to return it to the pool
+  /// @throws SQLException if a connection cannot be obtained
+  public Connection getConnection() throws SQLException {
     return dataSource.getConnection();
   }
 

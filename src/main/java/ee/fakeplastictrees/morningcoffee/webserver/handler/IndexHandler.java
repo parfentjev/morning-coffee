@@ -2,9 +2,9 @@ package ee.fakeplastictrees.morningcoffee.webserver.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import ee.fakeplastictrees.morningcoffee.Config;
+import ee.fakeplastictrees.morningcoffee.common.repository.RepositoryException;
 import ee.fakeplastictrees.morningcoffee.model.FeedEntryDto;
 import ee.fakeplastictrees.morningcoffee.repository.Repository;
-import ee.fakeplastictrees.morningcoffee.repository.RepositoryException;
 import ee.fakeplastictrees.morningcoffee.util.DateFormat;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.net.HttpURLConnection;
