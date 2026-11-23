@@ -1,8 +1,7 @@
-package ee.fakeplastictrees.morningcoffee.reader;
+package ee.fakeplastictrees.morningcoffee.feed;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import ee.fakeplastictrees.morningcoffee.model.Feed;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;

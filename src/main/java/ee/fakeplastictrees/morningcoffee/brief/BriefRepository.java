@@ -1,6 +1,6 @@
 package ee.fakeplastictrees.morningcoffee.brief;
 
-import ee.fakeplastictrees.morningcoffee.common.repository.RepositoryException;
+import ee.fakeplastictrees.morningcoffee.common.RepositoryException;
 import java.util.List;
 
 /// Stores and retrieves published briefs.

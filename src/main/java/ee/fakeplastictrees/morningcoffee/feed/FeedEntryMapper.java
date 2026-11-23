@@ -1,8 +1,7 @@
-package ee.fakeplastictrees.morningcoffee.reader;
+package ee.fakeplastictrees.morningcoffee.feed;
 
 import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEntry;
-import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;

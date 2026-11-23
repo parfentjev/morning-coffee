@@ -1,6 +1,6 @@
-package ee.fakeplastictrees.morningcoffee.reader;
+package ee.fakeplastictrees.morningcoffee.feed;
 
-import static ee.fakeplastictrees.morningcoffee.reader.FeedEntryMapper.syndEntryToFeedEntry;
+import static ee.fakeplastictrees.morningcoffee.feed.FeedEntryMapper.syndEntryToFeedEntry;
 import static java.time.OffsetDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;

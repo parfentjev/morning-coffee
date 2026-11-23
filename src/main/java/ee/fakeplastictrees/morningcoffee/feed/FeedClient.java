@@ -1,4 +1,4 @@
-package ee.fakeplastictrees.morningcoffee.reader;
+package ee.fakeplastictrees.morningcoffee.feed;
 
 import inet.ipaddr.HostName;
 import inet.ipaddr.HostNameException;

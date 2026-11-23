@@ -1,11 +1,10 @@
 package ee.fakeplastictrees.morningcoffee.webserver.handler;
 
 import com.sun.net.httpserver.HttpExchange;
-import ee.fakeplastictrees.morningcoffee.Config;
-import ee.fakeplastictrees.morningcoffee.common.repository.RepositoryException;
-import ee.fakeplastictrees.morningcoffee.model.FeedEntryDto;
-import ee.fakeplastictrees.morningcoffee.repository.Repository;
-import ee.fakeplastictrees.morningcoffee.util.DateFormat;
+import ee.fakeplastictrees.morningcoffee.common.Config;
+import ee.fakeplastictrees.morningcoffee.common.RepositoryException;
+import ee.fakeplastictrees.morningcoffee.feed.FeedEntryDto;
+import ee.fakeplastictrees.morningcoffee.feed.FeedService;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
@@ -16,16 +15,16 @@ import java.util.Map;
 class IndexHandler extends AbstractHttpHandler {
   private final Config.WebServer config;
   private final TemplateService templates;
-  private final Repository repository;
+  private final FeedService feedService;
 
   /// Creates an index handler.
   ///
   /// @param config web server configuration
-  /// @param repository feed repository
+  /// @param feedService service providing feed entries
   /// @param templates service that manages HTML templates
-  public IndexHandler(Config.WebServer config, Repository repository, TemplateService templates) {
+  public IndexHandler(Config.WebServer config, FeedService feedService, TemplateService templates) {
     this.config = config;
-    this.repository = repository;
+    this.feedService = feedService;
     this.templates = templates;
   }
 
@@ -44,7 +43,7 @@ class IndexHandler extends AbstractHttpHandler {
 
   private List<Map<String, Object>> buildEntries() throws RepositoryException {
     var entries = new ArrayList<Map<String, Object>>();
-    for (var entry : repository.getEntries(config.entriesPerPage())) {
+    for (var entry : feedService.getEntries(config.entriesPerPage())) {
       entries.add(buildEntry(entry));
     }
 

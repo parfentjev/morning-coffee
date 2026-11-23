@@ -1,15 +1,16 @@
-package ee.fakeplastictrees.morningcoffee.util;
+package ee.fakeplastictrees.morningcoffee.webserver.render;
 
+import java.io.IOException;
 import java.io.Serial;
 
 /// Signals a failure to load a classpath resource.
-public class ResourceManagerException extends Exception {
+class ResourceManagerException extends IOException {
   @Serial private static final long serialVersionUID = 1L;
 
   /// Creates an exception with an error message.
   ///
   /// @param message error message
-  public ResourceManagerException(String message) {
+  ResourceManagerException(String message) {
     super(message);
   }
 
@@ -17,7 +18,7 @@ public class ResourceManagerException extends Exception {
   ///
   /// @param message error message
   /// @param e underlying cause
-  public ResourceManagerException(String message, Exception e) {
+  ResourceManagerException(String message, Exception e) {
     super(message, e);
   }
 }

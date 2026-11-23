@@ -1,4 +1,4 @@
-package ee.fakeplastictrees.morningcoffee.common.repository;
+package ee.fakeplastictrees.morningcoffee.common;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

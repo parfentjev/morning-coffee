@@ -1,6 +1,5 @@
-package ee.fakeplastictrees.morningcoffee.reader;
+package ee.fakeplastictrees.morningcoffee.feed;
 
-import ee.fakeplastictrees.morningcoffee.model.Feed;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;

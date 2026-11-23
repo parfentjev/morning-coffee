@@ -1,4 +1,4 @@
-package ee.fakeplastictrees.morningcoffee.model;
+package ee.fakeplastictrees.morningcoffee.feed;
 
 import static java.util.Objects.requireNonNull;
 

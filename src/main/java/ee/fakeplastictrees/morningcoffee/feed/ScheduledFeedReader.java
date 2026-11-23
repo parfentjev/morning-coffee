@@ -1,10 +1,7 @@
-package ee.fakeplastictrees.morningcoffee.reader;
+package ee.fakeplastictrees.morningcoffee.feed;
 
-import ee.fakeplastictrees.morningcoffee.Config;
-import ee.fakeplastictrees.morningcoffee.common.repository.RepositoryException;
-import ee.fakeplastictrees.morningcoffee.model.Feed;
-import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
-import ee.fakeplastictrees.morningcoffee.repository.Repository;
+import ee.fakeplastictrees.morningcoffee.common.Config;
+import ee.fakeplastictrees.morningcoffee.common.RepositoryException;
 import java.io.Closeable;
 import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
@@ -29,7 +26,7 @@ public final class ScheduledFeedReader implements Closeable {
   private final Config.Reader config;
   private final ScheduledThreadPoolExecutor scheduledExecutor;
   private final ExecutorService fetchFeedExecutor;
-  private final Repository repository;
+  private final FeedService feedService;
   private final FeedClient feedClient;
   private final FeedParser feedParser;
 
@@ -38,23 +35,23 @@ public final class ScheduledFeedReader implements Closeable {
   /// Creates a scheduled feed reader.
   ///
   /// @param config feed reader configuration
-  /// @param repository feed repository
-  public ScheduledFeedReader(Config.Reader config, Repository repository)
+  /// @param feedService service providing feed entries
+  public ScheduledFeedReader(Config.Reader config, FeedService feedService)
       throws IllegalArgumentException {
-    this(config, repository, null);
+    this(config, feedService, null);
   }
 
   /// Creates a scheduled reader with a configurable executor for feed fetches.
   ///
   /// @param config feed polling and retrieval settings
-  /// @param repository feed repository
+  /// @param feedService service providing feed entries
   /// @param workers executor that runs submissions asynchronously, or null to use virtual threads
   /// @throws IllegalArgumentException if the reader configuration is invalid
-  ScheduledFeedReader(Config.Reader config, Repository repository, ExecutorService workers) {
+  ScheduledFeedReader(Config.Reader config, FeedService feedService, ExecutorService workers) {
     assertConfigValid(config);
 
     this.config = config;
-    this.repository = repository;
+    this.feedService = feedService;
 
     this.scheduledExecutor = new ScheduledThreadPoolExecutor(1);
     this.scheduledExecutor.setRemoveOnCancelPolicy(true);
@@ -123,7 +120,7 @@ public final class ScheduledFeedReader implements Closeable {
   private Optional<List<FeedCoordinator.ProcessableFeed>> loadSnapshot() {
     List<Feed> feeds;
     try {
-      feeds = repository.getFeeds();
+      feeds = feedService.getFeeds();
     } catch (RepositoryException e) {
       logger.warn("failed to get feeds", e);
       return Optional.empty();
@@ -171,7 +168,7 @@ public final class ScheduledFeedReader implements Closeable {
               .toList();
 
       if (config.maxEntriesPerFetch() >= entries.size()) {
-        repository.saveFeedEntries(entries);
+        feedService.saveFeedEntries(entries);
       } else {
         logger.debug(
             "{} returned {} entries, saving only the latest {}",
@@ -179,7 +176,7 @@ public final class ScheduledFeedReader implements Closeable {
             entries.size(),
             config.maxEntriesPerFetch());
 
-        repository.saveFeedEntries(entries.subList(0, config.maxEntriesPerFetch()));
+        feedService.saveFeedEntries(entries.subList(0, config.maxEntriesPerFetch()));
       }
     } catch (FeedParserException e) {
       if (logger.isDebugEnabled()) {

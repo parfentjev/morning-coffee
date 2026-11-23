@@ -1,4 +1,4 @@
-package ee.fakeplastictrees.morningcoffee;
+package ee.fakeplastictrees.morningcoffee.common;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import inet.ipaddr.AddressStringException;
@@ -197,25 +197,17 @@ public final class Config {
 
   /// Configures Brief providers.
   public static final class Brief {
-    private final String provider;
-    private final Anthropic anthropic;
+    private final Service service;
     private final Schedule schedule;
 
     private Brief() {
-      var env = new EnvironmentReader("BRIEF");
-      this.provider = env.optional("PROVIDER", "DUMMY");
-      this.anthropic = new Anthropic();
+      this.service = new Service();
       this.schedule = new Schedule();
     }
 
-    /// {@return the configured brief provider name}
-    public String provider() {
-      return provider;
-    }
-
-    /// {@return the configuration for the Anthropic brief provider}
-    public Anthropic anthropic() {
-      return anthropic;
+    /// {@return the brief service configuration}
+    public Service service() {
+      return service;
     }
 
     /// {@return the daily brief schedule}
@@ -252,39 +244,61 @@ public final class Config {
       }
     }
 
-    /// Configures Anthropic Brief providers.
-    public static final class Anthropic {
-      private final String apiKey;
-      private final String basePrompt;
-      private final long maxTokens;
-      private final String model;
+    /// Configures brief provider selection and provider-specific settings.
+    public static final class Service {
+      private final String provider;
+      private final Anthropic anthropic;
 
-      private Anthropic() {
-        var env = new EnvironmentReader("BRIEF_ANTHROPIC");
-        this.apiKey = env.optional("API_KEY", null);
-        this.basePrompt = env.optional("BASE_PROMPT", null);
-        this.maxTokens = env.optional("MAX_TOKENS", 2048L, Long::valueOf);
-        this.model = env.optional("MODEL", null);
+      private Service() {
+        var env = new EnvironmentReader("BRIEF_SERVICE");
+        this.provider = env.optional("PROVIDER", "DUMMY");
+        this.anthropic = new Anthropic();
       }
 
-      /// {@return the API key used to authenticate Anthropic requests}
-      public String apiKey() {
-        return apiKey;
+      /// {@return the configured brief provider name}
+      public String provider() {
+        return provider;
       }
 
-      /// {@return the instructions used to generate a brief from feed entries}
-      public String basePrompt() {
-        return basePrompt;
+      /// {@return the configuration for the Anthropic brief provider}
+      public Anthropic anthropic() {
+        return anthropic;
       }
 
-      /// {@return the maximum number of output tokens requested per brief}
-      public long maxTokens() {
-        return maxTokens;
-      }
+      /// Configures Anthropic Brief providers.
+      public static final class Anthropic {
+        private final String apiKey;
+        private final String basePrompt;
+        private final long maxTokens;
+        private final String model;
 
-      /// {@return the Anthropic model ID used for brief generation}
-      public String model() {
-        return model;
+        private Anthropic() {
+          var env = new EnvironmentReader("BRIEF_SERVICE_ANTHROPIC");
+          this.apiKey = env.optional("API_KEY", null);
+          this.basePrompt = env.optional("BASE_PROMPT", null);
+          this.maxTokens = env.optional("MAX_TOKENS", 2048L, Long::valueOf);
+          this.model = env.optional("MODEL", null);
+        }
+
+        /// {@return the API key used to authenticate Anthropic requests}
+        public String apiKey() {
+          return apiKey;
+        }
+
+        /// {@return the instructions used to generate a brief from feed entries}
+        public String basePrompt() {
+          return basePrompt;
+        }
+
+        /// {@return the maximum number of output tokens requested per brief}
+        public long maxTokens() {
+          return maxTokens;
+        }
+
+        /// {@return the Anthropic model ID used for brief generation}
+        public String model() {
+          return model;
+        }
       }
     }
   }

@@ -1,7 +1,7 @@
 package ee.fakeplastictrees.morningcoffee.brief;
 
-import ee.fakeplastictrees.morningcoffee.common.repository.ConnectionPool;
-import ee.fakeplastictrees.morningcoffee.common.repository.RepositoryException;
+import ee.fakeplastictrees.morningcoffee.common.ConnectionPool;
+import ee.fakeplastictrees.morningcoffee.common.RepositoryException;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;

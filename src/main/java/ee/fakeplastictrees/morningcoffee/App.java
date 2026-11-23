@@ -4,12 +4,13 @@ import static java.util.Optional.ofNullable;
 
 import ee.fakeplastictrees.morningcoffee.brief.BriefServiceFactory;
 import ee.fakeplastictrees.morningcoffee.brief.ScheduledBriefGenerator;
-import ee.fakeplastictrees.morningcoffee.common.repository.ConnectionPool;
-import ee.fakeplastictrees.morningcoffee.reader.ScheduledFeedReader;
-import ee.fakeplastictrees.morningcoffee.repository.Repository;
+import ee.fakeplastictrees.morningcoffee.common.Config;
+import ee.fakeplastictrees.morningcoffee.common.ConnectionPool;
+import ee.fakeplastictrees.morningcoffee.feed.FeedService;
+import ee.fakeplastictrees.morningcoffee.feed.ScheduledFeedReader;
 import ee.fakeplastictrees.morningcoffee.webserver.WebServer;
+import ee.fakeplastictrees.morningcoffee.webserver.handler.StaticHandler;
 import ee.fakeplastictrees.morningcoffee.webserver.render.PebbleTemplateService;
-import ee.fakeplastictrees.morningcoffee.webserver.render.StaticResourceService;
 import java.io.Closeable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,21 +49,20 @@ public class App implements Closeable {
             config.repository().postgresUser(),
             config.repository().postgresPassword());
 
-    // TODO: move this repo into the reader package
-    var repository = new Repository(pool);
-    reader = new ScheduledFeedReader(config.reader(), repository);
+    var feedService = new FeedService(pool);
+    reader = new ScheduledFeedReader(config.reader(), feedService);
     reader.start();
 
-    var briefService = BriefServiceFactory.get(config.brief(), pool);
-    briefGenerator = new ScheduledBriefGenerator(config.brief().schedule());
+    var briefService = BriefServiceFactory.get(config.brief().service(), pool);
+    briefGenerator = new ScheduledBriefGenerator(config.brief().schedule(), briefService);
     briefGenerator.start();
 
     var templateService = new PebbleTemplateService();
-    var resourceService = StaticResourceService.init();
+    var staticHandler = new StaticHandler();
 
     server =
         new WebServer(
-            config.webServer(), repository, briefService, templateService, resourceService);
+            config.webServer(), feedService, briefService, templateService, staticHandler);
     server.start();
   }
 

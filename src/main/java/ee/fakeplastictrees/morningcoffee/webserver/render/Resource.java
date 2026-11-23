@@ -1,4 +1,4 @@
-package ee.fakeplastictrees.morningcoffee.util;
+package ee.fakeplastictrees.morningcoffee.webserver.render;
 
 import java.nio.charset.StandardCharsets;
 
@@ -6,8 +6,8 @@ import java.nio.charset.StandardCharsets;
 ///
 /// @param contentType resource media type
 /// @param contents resource bytes
-public record Resource(String contentType, byte[] contents) {
-  public Resource {
+record Resource(String contentType, byte[] contents) {
+  Resource {
     contents = contents.clone();
   }
 

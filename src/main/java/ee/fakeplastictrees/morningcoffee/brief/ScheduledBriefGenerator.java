@@ -1,6 +1,6 @@
 package ee.fakeplastictrees.morningcoffee.brief;
 
-import ee.fakeplastictrees.morningcoffee.Config;
+import ee.fakeplastictrees.morningcoffee.common.Config;
 import java.io.Closeable;
 import java.time.Duration;
 import java.time.ZoneId;
@@ -14,12 +14,14 @@ import org.apache.logging.log4j.Logger;
 public class ScheduledBriefGenerator implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
+  private final BriefService service;
   private final ZoneId timeZone;
   private final int scheduledHour;
   private final int scheduledMinute;
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-  public ScheduledBriefGenerator(Config.Brief.Schedule config) {
+  public ScheduledBriefGenerator(Config.Brief.Schedule config, BriefService service) {
+    this.service = service;
     this.timeZone = config.timeZone();
     this.scheduledHour = config.hour();
     this.scheduledMinute = config.minute();
@@ -46,8 +48,10 @@ public class ScheduledBriefGenerator implements Closeable {
         () -> {
           try {
             logger.debug("generating a new brief");
+            // TODO: populate with real data
+            service.generate("idempotencyKey", "sourceMaterial");
           } catch (Throwable t) {
-            logger.error("brief generator error", t);
+            logger.error("brief generator exception", t);
           } finally {
             scheduleNext();
           }

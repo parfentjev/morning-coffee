@@ -1,32 +1,24 @@
-package ee.fakeplastictrees.morningcoffee.repository;
+package ee.fakeplastictrees.morningcoffee.feed;
 
-import ee.fakeplastictrees.morningcoffee.common.repository.ConnectionPool;
-import ee.fakeplastictrees.morningcoffee.common.repository.RepositoryException;
-import ee.fakeplastictrees.morningcoffee.model.Feed;
-import ee.fakeplastictrees.morningcoffee.model.FeedEntry;
-import ee.fakeplastictrees.morningcoffee.model.FeedEntryDto;
-import java.io.Closeable;
+import ee.fakeplastictrees.morningcoffee.common.ConnectionPool;
+import ee.fakeplastictrees.morningcoffee.common.RepositoryException;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /// Provides PostgreSQL persistence for feeds and feed entries.
 ///
 /// Each operation opens and closes its own database connection and JDBC resources.
-public class Repository implements Closeable {
-  private static final Logger logger = LogManager.getLogger();
-
+final class PostgresFeedRepository {
   private final ConnectionPool connectionPool;
 
   /// Creates a feed repository backed by the supplied connection pool.
   ///
-  /// @param connectionPool pool used for feed reads and writes and closed by [#close()]
-  public Repository(ConnectionPool connectionPool) {
+  /// @param connectionPool pool used for feed reads and writes
+  PostgresFeedRepository(ConnectionPool connectionPool) {
     this.connectionPool = connectionPool;
   }
 
@@ -34,7 +26,7 @@ public class Repository implements Closeable {
   ///
   /// @return enabled feeds
   /// @throws RepositoryException if feeds cannot be retrieved
-  public List<Feed> getFeeds() throws RepositoryException {
+  List<Feed> getFeeds() throws RepositoryException {
     var feeds = new ArrayList<Feed>();
     var sql =
         """
@@ -63,7 +55,7 @@ public class Repository implements Closeable {
   ///
   /// @param entries feed entry list to save
   /// @throws RepositoryException if feed entries cannot be saved
-  public void saveFeedEntries(List<FeedEntry> entries) throws RepositoryException {
+  void saveFeedEntries(List<FeedEntry> entries) throws RepositoryException {
     var entrySql =
         """
         insert into entries(external_id, published_at, feed_id, title, link)
@@ -124,7 +116,7 @@ public class Repository implements Closeable {
   /// @param n maximum number of entries to return
   /// @return up to `n` latest feed entries
   /// @throws RepositoryException if feed entries cannot be retrieved
-  public List<FeedEntryDto> getEntries(int n) throws RepositoryException {
+  List<FeedEntryDto> getEntries(int n) throws RepositoryException {
     var entries = new ArrayList<FeedEntryDto>();
     var sql =
         """
@@ -155,12 +147,5 @@ public class Repository implements Closeable {
     }
 
     return entries;
-  }
-
-  @Override
-  @SuppressWarnings("ConvertToTryWithResources")
-  public void close() {
-    logger.info("shutting down");
-    connectionPool.close();
   }
 }

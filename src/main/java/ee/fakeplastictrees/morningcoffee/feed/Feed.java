@@ -1,4 +1,4 @@
-package ee.fakeplastictrees.morningcoffee.model;
+package ee.fakeplastictrees.morningcoffee.feed;
 
 import static java.util.Objects.requireNonNull;
 
@@ -10,8 +10,8 @@ import java.util.UUID;
 /// @param id feed identifier
 /// @param url feed URL
 /// @param requestTimeout timeout for the HTTP request
-public record Feed(UUID id, String url, Duration requestTimeout) {
-  public Feed {
+record Feed(UUID id, String url, Duration requestTimeout) {
+  Feed {
     requireNonNull(id);
     requireNonNull(url);
     requireNonNull(requestTimeout);

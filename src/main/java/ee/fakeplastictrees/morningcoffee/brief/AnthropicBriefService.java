@@ -7,8 +7,8 @@ import com.anthropic.errors.AnthropicInvalidDataException;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.Model;
 import com.anthropic.models.messages.StopReason;
-import ee.fakeplastictrees.morningcoffee.Config;
-import ee.fakeplastictrees.morningcoffee.common.repository.RepositoryException;
+import ee.fakeplastictrees.morningcoffee.common.Config;
+import ee.fakeplastictrees.morningcoffee.common.RepositoryException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 class AnthropicBriefService implements BriefService {
   private final Logger logger = LogManager.getLogger();
-  private final Config.Brief.Anthropic config;
+  private final Config.Brief.Service.Anthropic config;
   private final BriefRepository repository;
   private final AnthropicClient client;
 
@@ -26,7 +26,7 @@ class AnthropicBriefService implements BriefService {
   /// @param config provider credentials and generation settings
   /// @param repository storage for published briefs
   /// @throws IllegalArgumentException if the provider configuration is invalid
-  AnthropicBriefService(Config.Brief.Anthropic config, BriefRepository repository) {
+  AnthropicBriefService(Config.Brief.Service.Anthropic config, BriefRepository repository) {
     assertConfigValid(config);
 
     this.config = config;
@@ -84,7 +84,7 @@ class AnthropicBriefService implements BriefService {
     }
   }
 
-  private void assertConfigValid(Config.Brief.Anthropic config) {
+  private void assertConfigValid(Config.Brief.Service.Anthropic config) {
     if (config.apiKey() == null || config.apiKey().isBlank()) {
       throw new IllegalArgumentException("api key is required");
     }

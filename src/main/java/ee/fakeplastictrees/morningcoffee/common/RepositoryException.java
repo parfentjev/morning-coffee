@@ -1,4 +1,4 @@
-package ee.fakeplastictrees.morningcoffee.common.repository;
+package ee.fakeplastictrees.morningcoffee.common;
 
 import java.io.Serial;
 

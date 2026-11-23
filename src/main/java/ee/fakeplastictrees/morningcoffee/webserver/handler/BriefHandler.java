@@ -1,9 +1,8 @@
 package ee.fakeplastictrees.morningcoffee.webserver.handler;
 
 import com.sun.net.httpserver.HttpExchange;
-import ee.fakeplastictrees.morningcoffee.Config;
 import ee.fakeplastictrees.morningcoffee.brief.BriefService;
-import ee.fakeplastictrees.morningcoffee.util.DateFormat;
+import ee.fakeplastictrees.morningcoffee.common.Config;
 import ee.fakeplastictrees.morningcoffee.webserver.render.MarkdownRenderer;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.net.HttpURLConnection;

@@ -1,17 +1,17 @@
-package ee.fakeplastictrees.morningcoffee.util;
+package ee.fakeplastictrees.morningcoffee.webserver.render;
 
 import java.io.IOException;
 import java.net.URLConnection;
 
 /// Loads resources from the application classpath.
-public class ResourceManager {
+class ResourceManager {
   /// Loads a resource and determines its media type from its filename.
   ///
   /// @param filename classpath-relative resource filename
   /// @return loaded resource
   /// @throws ResourceManagerException if the resource cannot be loaded or its media type cannot be
   ///   determined
-  public static Resource loadResource(String filename) throws ResourceManagerException {
+  static Resource loadResource(String filename) throws ResourceManagerException {
     try (var stream = ResourceManager.class.getClassLoader().getResourceAsStream(filename)) {
       if (stream == null) {
         var message = "failed to load resource: %s".formatted(filename);

@@ -1,4 +1,4 @@
-package ee.fakeplastictrees.morningcoffee.reader;
+package ee.fakeplastictrees.morningcoffee.feed;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,7 +63,7 @@ class FeedParserTest {
     assertThat(entry.bodyContentType()).isEqualTo("xhtml");
   }
 
-  private ee.fakeplastictrees.morningcoffee.model.FeedEntry parse(boolean atom, String fields)
+  private FeedEntry parse(boolean atom, String fields)
       throws Exception {
     var xml =
         atom

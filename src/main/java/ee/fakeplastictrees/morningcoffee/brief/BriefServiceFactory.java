@@ -1,7 +1,7 @@
 package ee.fakeplastictrees.morningcoffee.brief;
 
-import ee.fakeplastictrees.morningcoffee.Config;
-import ee.fakeplastictrees.morningcoffee.common.repository.ConnectionPool;
+import ee.fakeplastictrees.morningcoffee.common.Config;
+import ee.fakeplastictrees.morningcoffee.common.ConnectionPool;
 
 public class BriefServiceFactory {
   private static BriefRepository repository;
@@ -12,7 +12,7 @@ public class BriefServiceFactory {
   /// @param pool connection pool used for brief storage
   /// @return the selected brief service
   /// @throws IllegalArgumentException if the provider is unknown or its configuration is invalid
-  public static BriefService get(Config.Brief config, ConnectionPool pool)
+  public static BriefService get(Config.Brief.Service config, ConnectionPool pool)
       throws IllegalArgumentException {
     if (repository == null) {
       repository = new PostgresBriefRepository(pool);
