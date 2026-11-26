@@ -34,3 +34,11 @@ create table public.entry_contents
 delete
 	cascade
 );
+
+create table public.briefs
+(
+    published_at timestamptz not null,
+    body text not null
+);
+
+create index briefs_published_at_idx on public.briefs using btree (published_at desc);

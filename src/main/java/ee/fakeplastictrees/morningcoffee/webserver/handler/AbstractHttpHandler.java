@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/// Handles requests matching one HTTP method and request-path pattern.
+/// Handles requests routed to this handler for its accepted HTTP method.
 abstract class AbstractHttpHandler implements HttpHandler {
   private static final Logger logger = LogManager.getLogger();
 
@@ -19,18 +19,14 @@ abstract class AbstractHttpHandler implements HttpHandler {
     logger.debug("{} {}", exchange.getRequestMethod(), exchange.getRequestURI());
 
     var matchingMethod = exchange.getRequestMethod().equals(requestMethod());
-    var matchingPath = exchange.getRequestURI().toString().matches(requestPath());
-
     Response response;
-    if (matchingMethod && matchingPath) {
+    if (matchingMethod) {
       try {
         response = response(exchange);
       } catch (Exception e) {
         logger.error("http handler error", e);
         response = Response.internalError();
       }
-    } else if (!matchingPath) {
-      response = Response.notFound();
     } else {
       response = Response.badRequest();
     }
@@ -43,12 +39,7 @@ abstract class AbstractHttpHandler implements HttpHandler {
   /// @return accepted HTTP method
   protected abstract String requestMethod();
 
-  /// Returns the regular expression matched against the request URI.
-  ///
-  /// @return accepted request-path pattern
-  protected abstract String requestPath();
-
-  /// Builds a response for a matching request.
+  /// Builds a response for a routed request with the accepted HTTP method.
   ///
   /// @param exchange current HTTP exchange
   /// @return response to send

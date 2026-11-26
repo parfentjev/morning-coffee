@@ -1,0 +1,19 @@
+package ee.fakeplastictrees.morningcoffee.feed;
+
+import static java.util.Objects.requireNonNull;
+
+import java.time.Duration;
+import java.util.UUID;
+
+/// Identifies a configured feed.
+///
+/// @param id feed identifier
+/// @param url feed URL
+/// @param requestTimeout timeout for the HTTP request
+record Feed(UUID id, String url, Duration requestTimeout) {
+  Feed {
+    requireNonNull(id);
+    requireNonNull(url);
+    requireNonNull(requestTimeout);
+  }
+}

@@ -1,10 +1,11 @@
 package ee.fakeplastictrees.morningcoffee.webserver;
 
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import ee.fakeplastictrees.morningcoffee.Config;
-import ee.fakeplastictrees.morningcoffee.repository.Repository;
-import ee.fakeplastictrees.morningcoffee.webserver.handler.HandlerManager;
-import ee.fakeplastictrees.morningcoffee.webserver.render.StaticResourceService;
+import ee.fakeplastictrees.morningcoffee.brief.BriefService;
+import ee.fakeplastictrees.morningcoffee.common.Config;
+import ee.fakeplastictrees.morningcoffee.feed.FeedService;
+import ee.fakeplastictrees.morningcoffee.webserver.handler.RequestRouter;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.io.Closeable;
 import java.io.IOException;
@@ -21,9 +22,10 @@ public class WebServer implements Closeable {
   private static final Logger logger = LogManager.getLogger();
 
   private final Config.WebServer config;
-  private final Repository repository;
-  private final TemplateService templates;
-  private final StaticResourceService resources;
+  private final FeedService feedService;
+  private final BriefService briefService;
+  private final TemplateService templateService;
+  private final HttpHandler staticHandler;
   private final ExecutorService requestExecutor;
 
   private HttpServer server;
@@ -31,18 +33,21 @@ public class WebServer implements Closeable {
   /// Creates a web server.
   ///
   /// @param config web server configuration
-  /// @param repository feed repository
-  /// @param resources service that manages dynamic HTML templates
-  /// @param templates service that manages static resources
+  /// @param feedService service providing feed entries
+  /// @param briefService service that supplies briefs for the brief page
+  /// @param templateService service that manages dynamic HTML templates
+  /// @param staticHandler handler that serves static resources
   public WebServer(
       Config.WebServer config,
-      Repository repository,
-      TemplateService resources,
-      StaticResourceService templates) {
+      FeedService feedService,
+      BriefService briefService,
+      TemplateService templateService,
+      HttpHandler staticHandler) {
     this.config = config;
-    this.repository = repository;
-    this.templates = resources;
-    this.resources = templates;
+    this.feedService = feedService;
+    this.briefService = briefService;
+    this.templateService = templateService;
+    this.staticHandler = staticHandler;
     this.requestExecutor = Executors.newVirtualThreadPerTaskExecutor();
   }
 
@@ -51,7 +56,8 @@ public class WebServer implements Closeable {
   /// @throws WebServerException if the HTTP server cannot be created
   public void start() throws WebServerException {
     server = createHttpServer(config.serverHostname(), config.serverPort());
-    HandlerManager.registerHandlers(config, repository, server, templates, resources);
+    RequestRouter.registerHandlers(
+        config, feedService, server, briefService, templateService, staticHandler);
     server.setExecutor(requestExecutor);
     server.start();
 

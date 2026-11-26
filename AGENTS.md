@@ -22,17 +22,17 @@ Morning Coffee is a small Java RSS/Atom reader. It polls configured feeds, store
 
 ## Configuration
 
-Application reads configuration from environment variables. See `ee.fakeplastictrees.morningcoffee.Config` for more details.
+Application reads configuration from environment variables. See `ee.fakeplastictrees.morningcoffee.common.Config` for more details.
 
 ## Package Boundaries
 
 Organize code by feature, not generic `interfaces` and `impl` layers.
 
 - Root package: application composition and configuration only.
-- `reader`: feed scheduling, HTTP retrieval, RSS parsing, and mapping feed entries.
+- `feed`: feed polling, HTTP retrieval, parsing, feed records, entry queries, and feed persistence.
+- `brief`: brief generation, provider selection, brief records, and brief persistence.
 - `webserver`: HTTP serving, user-facing page rendering, HTML output encoding, and static web resources.
-- `repository`: persistence and database-specific clients, including PostgreSQL access.
-- `model`: shared domain records without HTTP, ROME, HTML, or database dependencies.
+- `common.repository`: connection pooling and repository exceptions shared by features.
 
 ## Design Guidance
 
