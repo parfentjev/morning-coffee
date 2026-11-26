@@ -31,7 +31,7 @@ public class ScheduledBriefGenerator implements Closeable {
   }
 
   public void start() {
-    scheduleNext();
+    scheduleNext(new Task(Optional.empty()));
   }
 
   @Override
@@ -53,8 +53,8 @@ public class ScheduledBriefGenerator implements Closeable {
       var retry = t.retry().get();
       if (retry.count() <= RETRY_LIMIT) {
         timeUntil = Duration.ofSeconds(10);
-        idempotencyKey = retry.idempotencyKey();
-        retryCount = retry.count();
+        // idempotencyKey = retry.idempotencyKey();
+        // retryCount = retry.count();
       } else {
         // TODO: schedule the next task you bloody idiot
         logger.info("reached RETRY_LIMIT");
