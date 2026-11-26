@@ -22,7 +22,7 @@ Mamma mia.
 """;
 
   @Override
-  public void generate(String idempotencyKey, String sourceMaterial) {}
+  public void generate(String feedEntries) {}
 
   @Override
   public List<BriefDto> latest(int n) {

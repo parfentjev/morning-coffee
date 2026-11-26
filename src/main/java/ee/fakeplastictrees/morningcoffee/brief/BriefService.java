@@ -6,9 +6,8 @@ import java.util.List;
 public interface BriefService {
   /// Requests a brief based on the supplied material.
   ///
-  /// @param idempotencyKey identifier shared by retries of the same generation request
   /// @param sourceMaterial text on which to base the brief
-  void generate(String idempotencyKey, String sourceMaterial) throws BriefServiceException;
+  void generate(String feedEntries) throws BriefServiceException;
 
   /// Retrieves the most recently published briefs.
   ///

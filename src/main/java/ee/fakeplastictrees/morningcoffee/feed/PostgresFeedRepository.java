@@ -148,4 +148,42 @@ final class PostgresFeedRepository {
 
     return entries;
   }
+
+  /// Returns entries and their optional content, newest entry ID first.
+  List<FeedEntryWithContentDto> getEntriesWithContentAfterId(UUID id) throws RepositoryException {
+    var entries = new ArrayList<FeedEntryWithContentDto>();
+
+    var sql =
+        """
+        select e.id, f.name as feed_name, e.title, e.link, e.published_at,
+               c.body, c.body_content_type
+        from entries e
+        join feeds f on f.id = e.feed_id
+        left join entry_contents c on c.entry_id = e.id
+        where f.enabled = true and e.id > ?
+        order by e.id desc
+        """;
+
+    try (var connection = connectionPool.getConnection();
+        var statement = connection.prepareStatement(sql)) {
+      statement.setObject(1, id);
+      try (var result = statement.executeQuery()) {
+        while (result.next()) {
+          entries.add(
+              new FeedEntryWithContentDto(
+                  result.getObject("id", UUID.class),
+                  result.getString("feed_name"),
+                  result.getString("title"),
+                  result.getString("link"),
+                  result.getObject("published_at", OffsetDateTime.class),
+                  result.getString("body"),
+                  result.getString("body_content_type")));
+        }
+      }
+    } catch (SQLException e) {
+      throw new RepositoryException("failed to select feed entries and their content", e);
+    }
+
+    return entries;
+  }
 }

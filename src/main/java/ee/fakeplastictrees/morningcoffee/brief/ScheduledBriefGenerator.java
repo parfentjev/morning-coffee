@@ -1,12 +1,11 @@
 package ee.fakeplastictrees.morningcoffee.brief;
 
 import ee.fakeplastictrees.morningcoffee.common.Config;
+import ee.fakeplastictrees.morningcoffee.feed.FeedService;
 import java.io.Closeable;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -15,23 +14,27 @@ import org.apache.logging.log4j.Logger;
 
 public class ScheduledBriefGenerator implements Closeable {
   private static final Logger logger = LogManager.getLogger();
-  private static final int RETRY_LIMIT = 10;
+  private static final int RETRY_LIMIT = 3;
 
-  private final BriefService service;
+  private final BriefService briefService;
+  private final FeedService feedService;
   private final ZoneId timeZone;
   private final int scheduledHour;
   private final int scheduledMinute;
   private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-  public ScheduledBriefGenerator(Config.Brief.Schedule config, BriefService service) {
-    this.service = service;
+  public ScheduledBriefGenerator(
+      Config.Brief.Schedule config, BriefService briefService, FeedService feedService) {
+    this.briefService = briefService;
+    this.feedService = feedService;
+
     this.timeZone = config.timeZone();
     this.scheduledHour = config.hour();
     this.scheduledMinute = config.minute();
   }
 
   public void start() {
-    scheduleNext(new Task(Optional.empty()));
+    scheduleNext(0);
   }
 
   @Override
@@ -39,25 +42,18 @@ public class ScheduledBriefGenerator implements Closeable {
     executor.shutdownNow();
   }
 
-  private synchronized void scheduleNext(Task t) {
+  private synchronized void scheduleNext(final int retryCount) {
     if (executor.isShutdown()) {
       return;
     }
 
     var timeUntil = timeUntilScheduledHour();
-    var idempotencyKey = String.valueOf(Instant.now().toEpochMilli());
-    var retryCount = 0;
-
-    var isRetry = t.retry().isPresent();
-    if (isRetry) {
-      var retry = t.retry().get();
-      if (retry.count() <= RETRY_LIMIT) {
-        timeUntil = Duration.ofSeconds(10);
-        // idempotencyKey = retry.idempotencyKey();
-        // retryCount = retry.count();
+    if (retryCount > 0) {
+      if (retryCount <= RETRY_LIMIT) {
+        timeUntil = Duration.ofMinutes(1);
       } else {
-        // TODO: schedule the next task you bloody idiot
         logger.info("reached RETRY_LIMIT");
+        scheduleNext(0);
         return;
       }
     }
@@ -67,15 +63,14 @@ public class ScheduledBriefGenerator implements Closeable {
         () -> {
           try {
             logger.debug("generating a new brief");
-            // TODO: populate with real data
-            service.generate("idempotencyKey", "sourceMaterial");
-            scheduleNext(new Task(Optional.empty()));
+
+            // TODO: map entries to text, call the generate method
+            feedService.getEntries(0);
+
+            scheduleNext(0);
           } catch (Throwable cause) {
             logger.error("brief generator exception", cause);
-
-            var retry = new Retry(idempotencyKey, retryCount + 1);
-            var task = new Task(Optional.of(retry));
-            scheduleNext(task);
+            scheduleNext(retryCount + 1);
           }
         },
         timeUntil.toNanos(),
@@ -91,8 +86,4 @@ public class ScheduledBriefGenerator implements Closeable {
 
     return Duration.between(now, scheduledTime);
   }
-
-  private record Task(Optional<Retry> retry) {}
-
-  private record Retry(String idempotencyKey, int count) {}
 }

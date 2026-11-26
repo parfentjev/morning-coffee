@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+{% block header %}Latest briefs{% endblock %}
+{% block main %}
+{% for brief in briefs %}
+<article>
+    <h2>{{ brief.date }}</h2>
+    {{ brief.bodyHtml | raw }}
+</article>
+{% endfor %}
+{% endblock %}

@@ -54,8 +54,9 @@ public class App implements Closeable {
     reader.start();
 
     var briefService = BriefServiceFactory.get(config.brief().service(), pool);
-    // briefGenerator = new ScheduledBriefGenerator(config.brief().schedule(), briefService);
-    // briefGenerator.start();
+    briefGenerator =
+        new ScheduledBriefGenerator(config.brief().schedule(), briefService, feedService);
+    briefGenerator.start();
 
     var templateService = new PebbleTemplateService();
     var staticHandler = new StaticHandler();

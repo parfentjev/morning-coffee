@@ -6,9 +6,10 @@ import ee.fakeplastictrees.morningcoffee.common.Config;
 import ee.fakeplastictrees.morningcoffee.webserver.render.MarkdownRenderer;
 import ee.fakeplastictrees.morningcoffee.webserver.render.TemplateService;
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
 import java.util.Map;
 
-/// Serves the latest brief.
+/// Serves the latest briefs.
 class BriefHandler extends AbstractHttpHandler {
   private final MarkdownRenderer renderer = new MarkdownRenderer();
   private final int briefsPerPage;
@@ -28,18 +29,16 @@ class BriefHandler extends AbstractHttpHandler {
 
   @Override
   protected Response response(HttpExchange exchange) throws Exception {
-    var briefs = service.latest(briefsPerPage);
-    if (briefs.isEmpty()) {
-      // TODO: handle empty case
+    var briefs = new ArrayList<Map<String, String>>();
+    for (var brief : service.latest(briefsPerPage)) {
+      briefs.add(
+          Map.of(
+              "date", brief.publishedAt().format(DateFormat.SHORT),
+              "bodyHtml", renderer.render(brief.body())));
     }
 
-    // TODO: so far it assumes only 1 brief is returned, handle multiple
-    var brief = briefs.getFirst();
-    var date = brief.publishedAt().format(DateFormat.SHORT);
-    var bodyHtml = renderer.render(brief.body());
-    var content = Map.<String, Object>of("date", date, "bodyHtml", bodyHtml);
-
-    var response = template.render("brief.html", content);
+    Map<String, Object> content = briefs.isEmpty() ? Map.of() : Map.of("briefs", briefs);
+    var response = template.render("briefs.html", content);
 
     return Response.of(CONTENT_TYPE_TEXT_HTML, response, HttpURLConnection.HTTP_OK);
   }

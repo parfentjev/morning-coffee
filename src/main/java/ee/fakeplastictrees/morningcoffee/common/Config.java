@@ -5,8 +5,10 @@ import inet.ipaddr.AddressStringException;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import inet.ipaddr.IncompatibleAddressException;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.function.Function;
 
@@ -275,7 +277,15 @@ public final class Config {
         private Anthropic() {
           var env = new EnvironmentReader("BRIEF_SERVICE_ANTHROPIC");
           this.apiKey = env.optional("API_KEY", null);
-          this.basePrompt = env.optional("BASE_PROMPT", null);
+
+          var basePromptBase64 = env.optional("BASE_PROMPT", null);
+          if (basePromptBase64 == null || basePromptBase64.isBlank()) {
+            this.basePrompt = null;
+          } else {
+            this.basePrompt =
+                new String(Base64.getDecoder().decode(basePromptBase64), StandardCharsets.UTF_8);
+          }
+
           this.maxTokens = env.optional("MAX_TOKENS", 2048L, Long::valueOf);
           this.model = env.optional("MODEL", null);
         }

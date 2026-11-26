@@ -35,9 +35,10 @@ class AnthropicBriefService implements BriefService {
   }
 
   @Override
-  public void generate(String idempotencyKey, String sourceMaterial) throws BriefServiceException {
-    // TODO: handle idempotency key
-    var prompt = "basePrompt + sourceMaterial";
+  public void generate(String feedEntries) throws BriefServiceException {
+    var prompt =
+        "<instruction>%s</instruction><feedEntries>%s</feedEntries>"
+            .formatted(config.basePrompt(), feedEntries);
     var response = callProvider(prompt);
     if (response.failure().isPresent()) {
       var message = "call to provider failed: %s".formatted(response.failure().get());
@@ -107,6 +108,7 @@ class AnthropicBriefService implements BriefService {
   }
 
   private ProviderResponse callProvider(String prompt) throws BriefServiceException {
+    logger.debug("calling model with: {}", prompt);
     // TODO: temporary stub
     if (true) {
       return new ProviderResponse(
