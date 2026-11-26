@@ -29,12 +29,17 @@ class FeedEntryMapper {
           default -> throw new IllegalArgumentException("link must start with 'http(s)://'");
         };
 
-    var title =
-        switch (input.getTitle()) {
-          case null -> link;
-          case String v when v.isBlank() -> link;
-          case String v -> v;
-        };
+    var title = input.getTitle();
+    if (title == null || title.isBlank()) {
+      var description = input.getDescription();
+      if (hasBody(description)) {
+        var text = description.getValue().strip();
+        var length = Math.min(128, text.codePointCount(0, text.length()));
+        title = text.substring(0, text.offsetByCodePoints(0, length));
+      } else {
+        title = link;
+      }
+    }
     title = title.trim();
 
     var externalId =

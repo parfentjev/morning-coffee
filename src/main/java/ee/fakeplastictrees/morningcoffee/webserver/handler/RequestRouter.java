@@ -25,7 +25,7 @@ public class RequestRouter {
       TemplateService templateService,
       HttpHandler staticHandler) {
     server.createContext("/", new IndexHandler(config, feedService, templateService));
-    server.createContext("/brief", new BriefHandler(config, briefService, templateService));
+    // server.createContext("/brief", new BriefHandler(config, briefService, templateService));
     server.createContext("/static", staticHandler);
   }
 }

@@ -35,41 +35,38 @@ class AnthropicBriefService implements BriefService {
   }
 
   @Override
-  public void generate(String idempotencyKey, String sourceMaterial) {
+  public void generate(String idempotencyKey, String sourceMaterial) throws BriefServiceException {
     // TODO: handle idempotency key
     var prompt = "basePrompt + sourceMaterial";
     var response = callProvider(prompt);
     if (response.failure().isPresent()) {
-      logger.error("call to provider failed: {}", response.failure().get());
-      return;
+      var message = "call to provider failed: %s".formatted(response.failure().get());
+      throw new BriefServiceException(message);
     }
 
     var stopReason = response.stopReason();
     if (stopReason.isEmpty() || stopReason.get().equals(StopReason.END_TURN) == false) {
       var asString = response.stopReason().map(StopReason::asString).orElse("empty");
-      logger.warn("unexpected stop reason: {}", asString);
-
-      return;
+      var message = "unexpected stop reason: %s".formatted(asString);
+      throw new BriefServiceException(message);
     }
 
     if (response.brief().isEmpty()) {
-      logger.warn("brief is empty");
-
-      return;
+      var message = "brief is empty";
+      throw new BriefServiceException(message);
     }
 
     var body = response.brief().get();
     if (body.isBlank()) {
-      logger.error("brief is blank");
-
-      return;
+      var message = "brief is blank";
+      throw new BriefServiceException(message);
     }
 
     try {
       var brief = new Brief(OffsetDateTime.now(), body);
       repository.save(brief);
     } catch (RepositoryException e) {
-      logger.warn("failed to save brief", e);
+      throw new BriefServiceException("failed to save brief", e);
     }
   }
 
@@ -109,7 +106,7 @@ class AnthropicBriefService implements BriefService {
     }
   }
 
-  private ProviderResponse callProvider(String prompt) {
+  private ProviderResponse callProvider(String prompt) throws BriefServiceException {
     // TODO: temporary stub
     if (true) {
       return new ProviderResponse(
@@ -135,7 +132,7 @@ class AnthropicBriefService implements BriefService {
       return new ProviderResponse(
           Optional.of(body.toString()), message.stopReason(), Optional.empty());
     } catch (AnthropicException e) {
-      return new ProviderResponse(Optional.empty(), Optional.empty(), Optional.of(e));
+      throw new BriefServiceException("anthropic client exception", e);
     }
   }
 

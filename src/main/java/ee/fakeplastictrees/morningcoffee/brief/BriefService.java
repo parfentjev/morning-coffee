@@ -8,7 +8,7 @@ public interface BriefService {
   ///
   /// @param idempotencyKey identifier shared by retries of the same generation request
   /// @param sourceMaterial text on which to base the brief
-  void generate(String idempotencyKey, String sourceMaterial);
+  void generate(String idempotencyKey, String sourceMaterial) throws BriefServiceException;
 
   /// Retrieves the most recently published briefs.
   ///
